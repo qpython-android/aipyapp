@@ -70,14 +70,15 @@ index 7af1fd6..cac6783 100644
          from .saas import main as aipy_main
      aipy_main(args)
 diff --git a/aipyapp/aipy/config.py b/aipyapp/aipy/config.py
-index 02aaae1..8d47dce 100644
+index 02aaae1..4e41646 100644
 --- a/aipyapp/aipy/config.py
 +++ b/aipyapp/aipy/config.py
-@@ -1,92 +1,14 @@
- import sys
+@@ -1,92 +1,17 @@
+-import sys
 -import time
 -import requests # Import requests library
--import os
+ import os
++import sys
  import re
 -import io
 -import datetime
@@ -88,10 +89,10 @@ index 02aaae1..8d47dce 100644
  from rich import print
 -import tomli_w
 -import qrcode
- 
- 
- from .i18n import T
- 
+-
+-
+-from .i18n import T
+-
 -__PACKAGE_NAME__ = "aipyapp"
 -
 -OLD_SETTINGS_FILES = [
@@ -145,9 +146,9 @@ index 02aaae1..8d47dce 100644
 -        config_dir = Path(config_dir)
 -    else:
 -        config_dir = CONFIG_DIR
--
+ 
 -    config_file_path = config_dir / file_name
--
+ 
 -    # 如果配置文件不存在，则创建一个空文件
 -    if not config_file_path.exists():
 -        try:
@@ -155,19 +156,21 @@ index 02aaae1..8d47dce 100644
 -        except Exception as e:
 -            print(T('error_creating_config_dir').format(config_file_path, str(e)))
 -            raise
--
++from .i18n import T, set_lang
+ 
 -    return config_file_path
--
++SETTINGS_FILES = [Path.home() / '.aipy.toml', Path('aipython.toml').resolve(), Path('.aipy.toml').resolve(), Path('aipy.toml').resolve()]
+ 
 -def lowercase_keys(d):
 -    """递归地将字典中的所有键转换为小写"""
 -    if not isinstance(d, dict):
 -        return d
 -    return {k.lower(): lowercase_keys(v) for k, v in d.items()}
-+SETTINGS_FILES = [Path.home() / '.aipy.toml', Path('aipython.toml').resolve(), Path('.aipy.toml').resolve(), Path('aipy.toml').resolve()]
++set_lang((os.getenv('LANG')[:2] if os.getenv('LANG') else "en"))
  
  def is_valid_api_key(api_key):
      """
-@@ -95,261 +17,86 @@ def is_valid_api_key(api_key):
+@@ -95,261 +20,86 @@ def is_valid_api_key(api_key):
      :param api_key: 待校验的 API Key 字符串
      :return: 如果格式有效返回 True，否则返回 False
      """
@@ -621,7 +624,7 @@ index 3db0629..e2cba28 100644
  ```python
  runtime.display(path="path/to/image.png")
 diff --git a/aipyapp/gui.py b/aipyapp/gui.py
-index d532447..fb85588 100644
+index d532447..3f217ae 100644
 --- a/aipyapp/gui.py
 +++ b/aipyapp/gui.py
 @@ -241,7 +241,8 @@ class AIAppGUI:
@@ -629,11 +632,20 @@ index d532447..fb85588 100644
          self.root.grid_rowconfigure(1, weight=1)
  
 -        self.print_output(f"Python use - AIPython ({__version__}) [https://www.aipy.app]\n")
-+        console.print(f"[bold cyan]🚀 AIPython ({__version__}) on QPython")
++        console.print(f"[bold cyan]🚀 [AIPython ({__version__}) on [[green]QPython[/green]][/bold cyan] ")
 +        console.print(f"  🌐 http://github.com/qpython-android/aipyapp")
          self.print_output(f"{T('default')}: {self.names['default']}，{T('enabled')}: {' '.join(self.names['enabled'])}\n")
  
      def open_work_dir(self):
+@@ -392,7 +393,7 @@ def main(args):
+     settings.lang="zh"
+     console = GUIConsole()
+ 
+-    lang = settings.get('lang')
++    lang = settings.get('lang') or or (os.getenv('LANG')[:2] if os.getenv('LANG') else "en")
+     if lang: set_lang(lang)
+ 
+     try:
 @@ -405,4 +406,4 @@ def main(args):
     
      gui = AIAppGUI(tm, settings)  # Replace None with actual AI instance
@@ -642,10 +654,10 @@ index d532447..fb85588 100644
 \ No newline at end of file
 +    gui.run()
 diff --git a/aipyapp/main.py b/aipyapp/main.py
-index 64ff95f..d67ba45 100644
+index 64ff95f..af32275 100644
 --- a/aipyapp/main.py
 +++ b/aipyapp/main.py
-@@ -34,9 +34,9 @@ def get_default_config():
+@@ -34,14 +34,14 @@ def get_default_config():
      return str(default_config_path)
  
  def main(args):
@@ -653,22 +665,35 @@ index 64ff95f..d67ba45 100644
 -    console.print(f"[bold cyan]🚀 Python use - AIPython ({__version__}) [[green]https://aipy.app[/green]]")
 -
 +    console = Console(record=False)
-+    console.print(f"[bold cyan]🚀 AIPython ({__version__}) on QPython")
-+    console.print(f"  🌐 http://github.com/qpython-android/aipyapp")
++    console.print(f"[bold cyan]🚀 [AIPython ({__version__}) on [green]QPython[/green]][/bold cyan] ")
++    console.print(f"[bold cyan]🌐 github.com/qpython-android/aipyapp[/bold cyan] ")
      conf = ConfigManager(get_default_config(), args.config_dir)
      conf.check_config()
      settings = conf.get_config()
+ 
+-    lang = settings.get('lang')
++    lang = settings.get('lang') or or (os.getenv('LANG')[:2] if os.getenv('LANG') else "en")
+     if lang: set_lang(lang)
+     
+     try:
 diff --git a/aipyapp/saas.py b/aipyapp/saas.py
-index fdc68c7..7249984 100644
+index fdc68c7..f1e3675 100644
 --- a/aipyapp/saas.py
 +++ b/aipyapp/saas.py
-@@ -136,10 +136,12 @@ class InteractiveConsole():
+@@ -1,5 +1,6 @@
+ #!/usr/bin/env python
+ # -*- coding: utf-8 -*-
++import os
+ from enum import Enum, auto
+ from pathlib import Path
+ import importlib.resources as resources
+@@ -136,14 +137,16 @@ class InteractiveConsole():
  
  def main(args):
      console = Console(record=True)
 -    console.print(f"[bold cyan]🚀 Python use - AIPython ({__version__}) [[green]https://aipy.app[/green]]")
-+    console.print(f"[bold cyan]🚀 AIPython ({__version__}) on QPython")
-+    console.print(f"  🌐 http://github.com/qpython-android/aipyapp")
++    console.print(f"[bold cyan]🚀 [AIPython ({__version__}) on [[green]QPython[/green]][/bold cyan] ")
++    console.print(f"[bold cyan]🌐 github.com/qpython-android/aipyapp[/bold cyan] ")
      
 +    path = args.config if args.config else 'aipy.toml'
      default_config_path = resources.files(__PACKAGE_NAME__) / "default.toml"
@@ -677,6 +702,11 @@ index fdc68c7..7249984 100644
      conf.check_config()
      settings = conf.get_config()
  
+-    lang = settings.get('lang')
++    lang = settings.get('lang') or (os.getenv('LANG')[:2] if os.getenv('LANG') else "en")
+     if lang: set_lang(lang)
+ 
+     try:
 diff --git a/pyproject.toml b/pyproject.toml
 index a4d352f..3fcbc8b 100644
 --- a/pyproject.toml

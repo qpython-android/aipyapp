@@ -5,7 +5,7 @@
 from distutils.core import setup
 
 setup(name='aipyapp-qpython',
-      version='0.1.24',
+      version='0.1.24.1',
       description='AIPython is a Python command-line interpreter integrated with LLM.',
       author='The AIPYAPP Develpment Team',
       url='https://github.com/qpython-android/aipyapp',
