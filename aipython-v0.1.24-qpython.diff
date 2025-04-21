@@ -1,0 +1,688 @@
+diff --git a/aipyapp/__main__.py b/aipyapp/__main__.py
+index fb40758..cac6783 100644
+--- a/aipyapp/__main__.py
++++ b/aipyapp/__main__.py
+@@ -1,44 +1,24 @@
+ #!/usr/bin/env python
+ # coding: utf-8
+-
+-import argparse
+ from pathlib import Path
+ 
+-from .aipy.config import CONFIG_DIR
+-
+-config_help_message = (
+-    f"Specify the configuration directory.\nDefaults to {CONFIG_DIR} if not provided."
+-)
+-
+-def mainw():
+-    def parse_args():
+-        parser = argparse.ArgumentParser(description="Python use - AIPython")
+-        parser.add_argument("-c", '--config-dir', type=str,
+-                            help=config_help_message) # Use the generated help message
+-        parser.add_argument('cmd', nargs='?', default=None, help="Task to execute, e.g. 'Who are you?'")
+-        return parser.parse_args()
+-
+-    args = parse_args()
+-
+-    try:
+-        import wx
+-    except:
+-        import sys
+-        import subprocess
+-
+-        cp = subprocess.run([sys.executable, "-m", "pip", "install", 'wxpython'])
+-        assert cp.returncode == 0
+-
+-    from .wxgui import main as aipy_main
+-    aipy_main(args)
++from .aipy.config import SETTINGS_FILES
+ 
+ def main():
++    settings_files_help = "\n".join(map(str, SETTINGS_FILES))
++
++    config_help_message = (
++        f"Toml config file. If not provided, searches in:\n{settings_files_help}"
++    )
+ 
+     def parse_args():
+-        parser = argparse.ArgumentParser(description="Python use - AIPython", formatter_class=argparse.RawTextHelpFormatter)
+-        parser.add_argument("-c", '--config-dir', type=str,
++        import argparse
++        parser = argparse.ArgumentParser(description="AIPyApp on QPython", formatter_class=argparse.RawTextHelpFormatter)
++        parser.add_argument("-c", '--config', type=str, default="aipy.toml",
+                             help=config_help_message) # Use the generated help message
+         parser.add_argument('-p', '--python', default=False, action='store_true', help="Python mode")
++        parser.add_argument('-g', '--gui', default=False, action='store_true', help="GUI mode")
++
+         parser.add_argument('cmd', nargs='?', default=None, help="Task to execute, e.g. 'Who are you?'")
+         return parser.parse_args()
+ 
+@@ -46,6 +26,8 @@ def main():
+ 
+     if args.python:
+         from .main import main as aipy_main
++    elif args.gui:
++        from .gui import main as aipy_main
+     else:
+         from .saas import main as aipy_main
+     aipy_main(args)
+diff --git a/aipyapp/aipy/config.py b/aipyapp/aipy/config.py
+index 02aaae1..8d47dce 100644
+--- a/aipyapp/aipy/config.py
++++ b/aipyapp/aipy/config.py
+@@ -1,92 +1,14 @@
+ import sys
+-import time
+-import requests # Import requests library
+-import os
+ import re
+-import io
+-import datetime
+-import webbrowser
+ from pathlib import Path
+ 
+ from dynaconf import Dynaconf
+ from rich import print
+-import tomli_w
+-import qrcode
+ 
+ 
+ from .i18n import T
+ 
+-__PACKAGE_NAME__ = "aipyapp"
+-
+-OLD_SETTINGS_FILES = [
+-    Path.home() / '.aipy.toml',
+-    Path('aipython.toml').resolve(),
+-    Path('.aipy.toml').resolve(),
+-    Path('aipy.toml').resolve()
+-]
+-
+-# Coordinator 服务器地址
+-COORDINATOR_URL = os.getenv('COORDINATOR_URL', 'https://api.trustoken.ai/api')
+-POLL_INTERVAL = 5 # 轮询间隔（秒）
+-CONFIG_FILE_NAME = f"{__PACKAGE_NAME__}.toml"
+-USER_CONFIG_FILE_NAME = "user_config.toml"
+-
+-def init_config_dir():
+-    """
+-    获取平台相关的配置目录，并确保目录存在
+-    """
+-    if sys.platform == "win32":
+-        # Windows 路径
+-        app_data = os.environ.get("APPDATA")
+-        if app_data:
+-            config_dir = Path(app_data) / __PACKAGE_NAME__
+-        else:
+-            config_dir = Path.home() / "AppData" / "Roaming" / __PACKAGE_NAME__
+-    else:
+-        # Linux/macOS 路径
+-        config_dir = Path.home() / ".config" / __PACKAGE_NAME__
+-
+-    # 确保目录存在
+-    try:
+-        config_dir.mkdir(parents=True, exist_ok=True)
+-    except PermissionError:
+-        print(T('permission_denied_error').format(config_dir))
+-        raise
+-    except Exception as e:
+-        print(T('error_creating_config_dir').format(config_dir, str(e)))
+-        raise
+-
+-    return config_dir
+-
+-CONFIG_DIR = init_config_dir()
+-
+-def get_config_file_path(config_dir=None, file_name=CONFIG_FILE_NAME):
+-    """
+-    获取配置文件的完整路径
+-    :return: 配置文件的完整路径
+-    """
+-    if config_dir:
+-        config_dir = Path(config_dir)
+-    else:
+-        config_dir = CONFIG_DIR
+-
+-    config_file_path = config_dir / file_name
+-
+-    # 如果配置文件不存在，则创建一个空文件
+-    if not config_file_path.exists():
+-        try:
+-            config_file_path.touch()
+-        except Exception as e:
+-            print(T('error_creating_config_dir').format(config_file_path, str(e)))
+-            raise
+-
+-    return config_file_path
+-
+-def lowercase_keys(d):
+-    """递归地将字典中的所有键转换为小写"""
+-    if not isinstance(d, dict):
+-        return d
+-    return {k.lower(): lowercase_keys(v) for k, v in d.items()}
++SETTINGS_FILES = [Path.home() / '.aipy.toml', Path('aipython.toml').resolve(), Path('.aipy.toml').resolve(), Path('aipy.toml').resolve()]
+ 
+ def is_valid_api_key(api_key):
+     """
+@@ -95,261 +17,86 @@ def is_valid_api_key(api_key):
+     :param api_key: 待校验的 API Key 字符串
+     :return: 如果格式有效返回 True，否则返回 False
+     """
+-    pattern = r"^[A-Za-z0-9_-]{8,128}$"
++    pattern = r"^[A-Za-z0-9+/=-]{8,128}$"
+     return bool(re.match(pattern, api_key))
+ 
+-def request_binding():
+-    """向 Coordinator 请求绑定"""
+-    url = f"{COORDINATOR_URL}/request_bind"
+-    try:
+-        response = requests.post(url, timeout=10)
+-        response.raise_for_status()
+-
+-        data = response.json()
+-        approval_url = data['approval_url']
+-        request_id = data['request_id']
+-        expires_in = data['expires_in']
+-
+-        print(T('binding_request_sent').format(request_id, approval_url, expires_in))
+-        print(T('scan_qr_code'))
+-
+-        try:
+-            qr = qrcode.QRCode(
+-                error_correction=qrcode.constants.ERROR_CORRECT_L,
+-                border=1
+-            )
+-            qr.add_data(approval_url)
+-            qr.make(fit=True)
+-            qr.print_ascii(tty=True)
+-            print("\n")
+-        except Exception as e:
+-            print(T('qr_code_display_failed').format(e))
+-
+-        return data['request_id']
+-
+-    except requests.exceptions.RequestException as e:
+-        print(T('coordinator_request_error').format(e))
+-        return None
+-    except Exception as e:
+-        print(T('unexpected_request_error').format(e))
+-        return None
+-
+-def poll_status(request_id, save_func=None):
+-    """轮询绑定状态"""
+-    url = f"{COORDINATOR_URL}/check_status"
+-    params = {'request_id': request_id}
+-    start_time = time.time()
+-    polling_timeout = 310
+-
+-    print(T('waiting_for_approval'))
+-    try:
+-        while time.time() - start_time < polling_timeout:
+-            try:
+-                response = requests.get(url, params=params, timeout=10)
+-                response.raise_for_status()
+-
+-                data = response.json()
+-                status = data.get('status')
+-                print(T('current_status').format(status))
+-
+-                if status == 'approved':
+-                    if save_func:
+-                        save_func(data['secret_token'])
+-                    return True
+-                elif status == 'expired':
+-                    print(T('binding_expired'))
+-                    return False
+-                elif status == 'pending':
+-                    pass
+-                else:
+-                    print(T('unknown_status').format(status))
+-                    return False
+-
+-            except requests.exceptions.RequestException as e:
+-                print(T('coordinator_polling_error').format(e))
+-                time.sleep(POLL_INTERVAL)
+-            except Exception as e:
+-                print(T('unexpected_polling_error').format(e))
+-                return False
+-
+-            time.sleep(POLL_INTERVAL)
+-    except KeyboardInterrupt:
+-        print(T('polling_cancelled'))
+-        return False
+-
+-    print(T('polling_timeout'))
+-    return False
+-
+-def fetch_token(save_func):
+-    """从 Coordinator 获取 Token 并保存"""
+-    print(T('start_binding_process'))
+-    req_id = request_binding()
+-    if req_id:
+-        if poll_status(req_id, save_func):
+-            print(T('binding_success'))
+-        else:
+-            print(T('binding_failed'))
+-            sys.exit(1)
+-    else:
+-        print(T('binding_request_failed'))
+-        sys.exit(1)
+ 
+ class ConfigManager:
+-    def __init__(self, default_config="default.toml",  config_dir=None):
+-        self.config_file = get_config_file_path(config_dir)
+-        self.user_config_file = get_config_file_path(config_dir, USER_CONFIG_FILE_NAME)
++    def __init__(self, default_config="default.toml", user_config="aipy.toml"):
+         self.default_config = default_config
++        self.user_config = user_config
+         self.config = self._load_config()
+ 
+-        # old user config, without default config.
+-        self._old_user_config = Dynaconf(
+-            settings_files=OLD_SETTINGS_FILES,
+-            envvar_prefix="AIPY", merge_enabled=True
+-        )
+-        #print(self.config.to_dict())
+-        #print(self._old_user_config.to_dict())
+-
+     def _load_config(self):
+-        config = Dynaconf(
+-            settings_files=[self.default_config, self.config_file, self.user_config_file],
+-            envvar_prefix="AIPY",
+-        )
+-        #print(config.to_dict())
++        try:
++            settings_files = [self.default_config] + SETTINGS_FILES[:-1] + [Path(self.user_config).resolve()]
++
++            config = Dynaconf(
++                settings_files=settings_files,
++                envvar_prefix="AIPY", merge_enabled=True
++            )
++        except Exception as e:
++            print(T('error_loading_config').format(e))
++            config = None
+         return config
+ 
+     def get_config(self):
+         return self.config
+ 
+-    def save_tt_config(self, api_key):
+-        config = {
+-            'llm': {
+-                'trustoken': {
+-                    'api_key': api_key,
+-                    'type': 'trust',
+-                    'base_url': 'https://api.trustoken.ai/v1',
+-                    'model': 'auto',
+-                    'default': True,
+-                    'enable': True
+-                }
+-            }
+-        }
+-        header_comments = [
+-            f"# Configuration file for {__PACKAGE_NAME__}",
+-            "# Auto-generated on " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+-            f"# 请勿直接修改此文件，除非您了解具体配置格式，如果自定义配置，请放到{self.user_config_file}",
+-            f"# Please do not edit this file directly unless you understand the format. If you want to customize the configuration, please edit {self.user_config_file}",
+-            ""
+-        ]
+-        footer_comments = [
+-            "",
+-            "# End of configuration file"
+-        ]
+-
+-        with open(self.config_file, "w", encoding="utf-8") as f:
+-            # 1. 写入头部注释
+-            f.write("\n".join(header_comments) + "\n")
+-
+-            # 2. 写入 TOML 内容到临时内存文件
+-
+-            temp_buffer = io.BytesIO()
+-            tomli_w.dump(config, temp_buffer)
+-            toml_content = temp_buffer.getvalue().decode('utf-8')
+-
+-            # 3. 写入 TOML 内容
+-            f.write(toml_content)
+-
+-            # 4. 写入尾部注释
+-            f.write("\n".join(footer_comments))
+-
+-        return config
+-
+     def check_config(self):
++        if not self.config:
++            print(T('config_file_error'))
++            return
+ 
++        self.check_llm()
++
++    def check_llm(self):
+         if not self.config:
+             print(T('config_not_loaded'))
+             return
+-        tt = self.config.get('llm', {}).get('trustoken', {})
+-        if tt and tt.get('api_key') and tt.get('type') == 'trust':
+-            # valid tt config
+-            #print("trustoken config found")
+-            return
+-        elif self._old_user_config.to_dict():
+-            # no tt config, try to migrate from old config
+-            # remove this later.
+-            self._migrate_old_config(self._old_user_config)
+-        else:
+-            # try to fetch config from web.
+-            fetch_token(self.save_tt_config)
+-        
+-        # reload config
+-        self.config = self._load_config()
+ 
+-    def _migrate_old_config(self, old_config):
+-        """
+-        从old_config中提取符合特定条件的API keys，并从原始配置中删除
+-        
+-        返回: 提取的API keys字典，格式为 {配置名称: API key}
+-        """
+-        if not old_config:
+-            return {}
++        llm = self.config.get("llm")
++        if not llm:
++            print(T('llm_config_not_found'))
+ 
+-        tt_keys = []
++        llms = {}
++        for name, config in self.config.get('llm', {}).items():
++            if config.get("enable", True):
++                llms[name] = config
+ 
+-        # 处理顶级配置
+-        llm = old_config.get('llm', {})
+-        for section_name, section_data in list(llm.items()):
+-            # 跳过非字典类型的配置
+-            if not isinstance(section_data, dict):
+-                continue
++        if not llms:
++            self._init_llm()
++
++    def _init_llm(self):
++        print(T('pgpttoken_register_instruction').format(self.user_config))
+ 
+-            # 检查顶级配置
+-            if self._is_tt_config(section_name, section_data):
+-                api_key = section_data.get('api_key', '')
+-                if api_key:
+-                    tt_keys.append(api_key)
+-                # 从原配置中删除
+-                llm.pop(section_name)
++        while True:
++            user_token = input(T('prompt_token_input')).strip()
++            if user_token.lower() == "exit":
++                print(T('exit_token_prompt'))
++                sys.exit(0)
++            if not user_token:
++                print(T('no_token_detected'))
++                continue
++            if not is_valid_api_key(user_token):
++                print(T('invalid_token'))
++                continue
+ 
+-        #print("keys found:", tt_keys)
++            self.save_trustoken(user_token)
+ 
+-        if tt_keys:
+-            # 保存第一个找到的API key
+-            self.save_tt_config(tt_keys[0])
++            self.config = self._load_config()
++            break
+ 
+-        #print(old_config.to_dict())
+-        # 将 old_config 转换为 dict
+-        config_dict = lowercase_keys(old_config.to_dict())
++    def save_trustoken(self, token):
++        config_file = self.user_config
+         try:
+-            with open(self.user_config_file, "wb") as f:
+-                tomli_w.dump(config_dict, f)
+-                print(T('migrate_config').format(self.user_config_file))
++            with open(config_file, "a") as f:
++                f.write("\n[llm.pgpt]\n")
++                f.write(f'api_key = "{token}"\n')
++                f.write('base_url = "https://openai.pgpt.cloud/v1/"\n')
++                f.write('model = "auto"\n')
++                f.write("default = true\n")
++                f.write("enable = true\n")
++            print(T('token_saved').format(config_file))
+         except Exception as e:
+-            print(T('error_saving_config').format(self.user_config_file, str(e)))
+-        return
+-
+-    def _is_tt_config(self, name, config):
+-        """
+-        判断配置是否符合特定条件
+-        
+-        参数:
+-            name: 配置名称
+-            config: 配置内容字典
+-        
+-        返回: 如果符合条件返回True
+-        """
+-        # 条件1: 配置名称包含目标关键字
+-        if any(keyword in name.lower() for keyword in ['trustoken', 'trust']):
+-            return True
+-
+-        # 条件2: base_url包含目标域名
+-        if isinstance(config, dict) and 'base_url' in config:
+-            base_url = config['base_url'].lower()
+-            if 'trustoken.ai' in base_url:
+-                return True
+-
+-        # 条件3: 其他特定标记
+-        # type == trust, 且没有base_url.
+-        if isinstance(config, dict) and config.get('type') == 'trust' and not config.get('base_url'):
+-            return True
+-        
+-        return False
+\ No newline at end of file
++            print(T('token_save_error').format(e))
+diff --git a/aipyapp/aipy/i18n.py b/aipyapp/aipy/i18n.py
+index afdf834..f4ac80a 100644
+--- a/aipyapp/aipy/i18n.py
++++ b/aipyapp/aipy/i18n.py
+@@ -56,6 +56,14 @@ MESSAGES = {
+             "点击“复制”按钮，复制令牌到剪贴板。在下面进行粘贴。\n"
+             "另外，也可以选择退出，然后手动编辑配置文件 {}，配置自己已有的其他大模型令牌"
+         ),
++        'pgpttoken_register_instruction': (
++            "当前环境缺少配置文件，需要注册PGPT账号获取试用Token。\n"
++            "请按以下步骤操作：\n"
++            "1. 访问 https://user.pgpt.cloud/ 完成账号注册\n"
++            "2. 登录后创建App（选择deepseek）。操作详见文档 https://docs.pgpt.cloud/\n"
++            "3. 获取API Key并复制到剪贴板，然后在此粘贴\n"
++            "您也可以选择退出，然后手动编辑配置文件 {} 来配置已有的其他大模型Token"
++        ),
+         'prompt_token_input': "请粘贴令牌并按 Enter 键 (输入 'exit' 退出): ",
+         'exit_token_prompt': "退出令牌输入流程。",
+         'no_token_detected': "未检测到令牌输入。",
+@@ -136,6 +144,14 @@ MESSAGES = {
+             "Click the 'copy' button to copy your token to the clipboard and paste it here.\n"
+             "Alternatively, you can exit now, and manually edit the configuration file {} to configure your existing LLM token."
+         ),
++        'pgpttoken_register_instruction': (
++            "The current environment is missing configuration files. You need to register a PGPT account to get trial tokens.\n"
++            "Please follow these steps:\n"
++            "1. Visit https://user.pgpt.cloud/ to complete account registration\n"
++            "2. After logging in, create an App (please select deepseek). See documentation: https://docs.pgpt.cloud/\n"
++            "3. Get your API Key, copy it to clipboard, then paste it here\n"
++            "Alternatively, you can exit and manually edit the configuration file {} to set up tokens for other existing LLM models"
++        ),
+         'prompt_token_input': "Please paste the token and press Enter (type 'exit' to quit): ",
+         'exit_token_prompt': "Exiting token input process.",
+         'no_token_detected': "No token detected.",
+diff --git a/aipyapp/aipy/llm.py b/aipyapp/aipy/llm.py
+index 8cf3bb4..8985a6a 100644
+--- a/aipyapp/aipy/llm.py
++++ b/aipyapp/aipy/llm.py
+@@ -427,13 +427,18 @@ class AzureOpenAIClient(OpenAIBaseClient):
+     def _get_client(self):
+         from openai import AzureOpenAI
+         return AzureOpenAI(azure_endpoint=self._end_point, api_key=self._api_key, api_version="2024-02-01")
+-            
++
++class PGPTAIClient(OpenAIBaseClient):
++    BASE_URL = "https://openai.pgpt.cloud/v1/"
++    MODEL = "auto"
++
+ class LLM(object):
+     CLIENTS = {
+         "openai": OpenAIClient,
+         "ollama": OllamaClient,
+         "claude": ClaudeClient,
+         "gemini": GeminiClient,
++        "pgptai": PGPTAIClient,
+         "deepseek": DeepSeekClient,
+         'grok': GrokClient,
+         'trust': TrustClient,
+diff --git a/aipyapp/aipy/prompt.py b/aipyapp/aipy/prompt.py
+index 3db0629..e2cba28 100644
+--- a/aipyapp/aipy/prompt.py
++++ b/aipyapp/aipy/prompt.py
+@@ -4,7 +4,7 @@
+ SYSTEM_PROMPT = """
+ # 代码块格式规范
+ 
+-回复消息使用标准 Markdown 格式，请在回答中使用以下格式标记所有代码块：
++请在回答中使用以下格式标记所有代码块：
+ 
+ ````lang name
+ 代码内容
+@@ -39,10 +39,52 @@ def greet(name):
+ # Python 运行环境描述
+ 
+ ## 可用模块
++<available modules>
+ - Python 自带的标准库模块。
+-- 预装的第三方模块有：`requests`、`numpy`、`pandas`、`matplotlib`、`seaborn`、`bs4`、`googleapiclient`。
++- QPython 自带的标准模块：`qpy`, `androidhelper`。
++- 预装的第三方模块有：`requests`、`numpy`、`pandas`、`matplotlib`、`plotpy`、`seaborn`、`bs4`、`google-api-python-client`。
+ - 在必要情况下，可以通过下述 runtime 对象的 install_packages 方法申请安装额外模块。
++</available modules>
+ 
++## QPython qpy 模块
++<qpython modules>
++qpy 模块预设了一些变量，使用前请自动执行
++```python
++import qpy
++```
++- qpy.sdcard 表示外置存储跟目录
++- qpy.home 表示QPython App的根目录
++- qpy.tmp 表示QPython App的缓存目录，执行任务期间的缓存文件可以自动保存于当前目录
++- qpy.scripts 表示脚本根目录，如果生成的目标是一个脚本文件，除非用户指定，否则是指当前变量指示的目录
++- qpy.projects 表示项目根目录，如果生成的目标是一个项目，除非用户指定，否则将自动在当前变量指示的目录内创建项目目录，并在main.py中写入项目主流程代码
++- qpy.notebooks 表示Notebook根目录，如果生成的目标是一个项目，除非用户指定，否则是指当前变量指示的目录
++- qpy.extra 表示Extra根目录，如果生成的目标即不是脚本，也不是项目或者Notebook，除非用户指定，否则是指当前变量指示的目录
++- qpy.snippets3 表示Snippets根目录，当指令涉及到Snippets目录或者代码片段时，除非用户指定，否则是指当前变量指示的目录
++</qpython modules>
++
++## QPython androidhelper 模块
++<qpython androidhelper>
++QPython androidhelper 模块，也叫QSL4A或者SL4A模块，它里面的的 Android 对象提供了一些在Python代码内调用安卓应用的接口，其中特别包括
++
++- viewHtml(path, title=None, wait=True) # 用于调用浏览器打开本地的文件或者网址；当指令为类似"用浏览器打开"时，调用该函数
++- executeQPy(scriptPath, arg=None) # 用于调用 QPython Python 引擎来执行scriptPath传递近来的路径；当指令为"用QPY运行"或"用QPY执行"或"用QPYTHON执行"或"用qpython运行"时，并且只有包含QPY或者QPYTHON关键词时，才调用该函数
++- editorOpen(path) # 用于调用 QPython 编辑器打开指定文件；当指令为"用编辑器打开"时，调用该函数
++- mediaPlay(url, targ="default", play=True) # 用于调用媒体播放器打开指定 url 媒体资源；当指令为 "播放" 且目标为音屏，调用该函数
++- videoPlay(path, wait=True) # 用于调用视频播放器打开指定 路径的视频文件；当指令为 "播放" 且目标为视频或者图片时，调用该函数
++- sendFile(path, type=None, extras=None, wait=True) # 用于调用安卓系统的分享功能分享文件；当指令为 "分享" 时，调用该函数
++
++androidhelper Android 对象的调用方法示范如下:
++```python
++import androidhelper
++droid = androidhelper.Android()
++droid.viewHtml("https://www.qpython.org")
++```
++
++需要注意，大部分的QSL4A接口在调用时，如果没有返回输出，则表示成功
++</qpython androidhelper>
++
++
++## Matplotlib 注意事项
+ 在使用 matplotlib 时，需要根据系统类型选择和设置合适的中文字体，否则图片里中文会乱码导致无法完成客户任务。
+ 示例代码如下：
+ ```python
+@@ -88,7 +130,7 @@ else:
+ ```
+ 
+ ### runtime.display 方法
+-如果 TERM 环境变量为 `xterm-256color` 或者 LC_TERMINAL 环境变量为 `iTerm2`，你可以用使用这个方法在终端上显示图片。
++如果 TERM 环境变量为 `xterm-256color` 或 `xterm` 或 `screen-256color` 或者 LC_TERMINAL 环境变量为 `iTerm2`，你可以用使用这个方法在终端上显示图片。
+ 示例：
+ ```python
+ runtime.display(path="path/to/image.png")
+diff --git a/aipyapp/gui.py b/aipyapp/gui.py
+index d532447..fb85588 100644
+--- a/aipyapp/gui.py
++++ b/aipyapp/gui.py
+@@ -241,7 +241,8 @@ class AIAppGUI:
+         self.root.grid_columnconfigure(1, weight=1)
+         self.root.grid_rowconfigure(1, weight=1)
+ 
+-        self.print_output(f"Python use - AIPython ({__version__}) [https://www.aipy.app]\n")
++        console.print(f"[bold cyan]🚀 AIPython ({__version__}) on QPython")
++        console.print(f"  🌐 http://github.com/qpython-android/aipyapp")
+         self.print_output(f"{T('default')}: {self.names['default']}，{T('enabled')}: {' '.join(self.names['enabled'])}\n")
+ 
+     def open_work_dir(self):
+@@ -405,4 +406,4 @@ def main(args):
+    
+     gui = AIAppGUI(tm, settings)  # Replace None with actual AI instance
+     console.set_gui(gui)
+-    gui.run()
+\ No newline at end of file
++    gui.run()
+diff --git a/aipyapp/main.py b/aipyapp/main.py
+index 64ff95f..d67ba45 100644
+--- a/aipyapp/main.py
++++ b/aipyapp/main.py
+@@ -34,9 +34,9 @@ def get_default_config():
+     return str(default_config_path)
+ 
+ def main(args):
+-    console = Console(record=True)
+-    console.print(f"[bold cyan]🚀 Python use - AIPython ({__version__}) [[green]https://aipy.app[/green]]")
+-
++    console = Console(record=False)
++    console.print(f"[bold cyan]🚀 AIPython ({__version__}) on QPython")
++    console.print(f"  🌐 http://github.com/qpython-android/aipyapp")
+     conf = ConfigManager(get_default_config(), args.config_dir)
+     conf.check_config()
+     settings = conf.get_config()
+diff --git a/aipyapp/saas.py b/aipyapp/saas.py
+index fdc68c7..7249984 100644
+--- a/aipyapp/saas.py
++++ b/aipyapp/saas.py
+@@ -136,10 +136,12 @@ class InteractiveConsole():
+ 
+ def main(args):
+     console = Console(record=True)
+-    console.print(f"[bold cyan]🚀 Python use - AIPython ({__version__}) [[green]https://aipy.app[/green]]")
++    console.print(f"[bold cyan]🚀 AIPython ({__version__}) on QPython")
++    console.print(f"  🌐 http://github.com/qpython-android/aipyapp")
+     
++    path = args.config if args.config else 'aipy.toml'
+     default_config_path = resources.files(__PACKAGE_NAME__) / "default.toml"
+-    conf = ConfigManager(default_config_path, args.config_dir)
++    conf = ConfigManager(default_config_path, path)
+     conf.check_config()
+     settings = conf.get_config()
+ 
+diff --git a/pyproject.toml b/pyproject.toml
+index a4d352f..3fcbc8b 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,5 +1,6 @@
+ [project]
+ name = "aipyapp"
++version = "0.1.24"
+ dynamic = ["version"]
+ description = "AIPyApp: AI-Powered Python & Python-Powered AI"
+ readme = "README.md"
