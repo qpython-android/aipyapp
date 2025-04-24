@@ -570,10 +570,29 @@ index 8cf3bb4..c25a03f 100644
          'grok': GrokClient,
          'trust': TrustClient,
 diff --git a/aipyapp/aipy/prompt.py b/aipyapp/aipy/prompt.py
-index 3db0629..8d0a334 100644
+index 3db0629..8d4f76b 100644
 --- a/aipyapp/aipy/prompt.py
 +++ b/aipyapp/aipy/prompt.py
-@@ -40,9 +40,37 @@ def greet(name):
+@@ -1,6 +1,18 @@
+ #!/usr/bin/env python
+ # coding: utf-8
+ 
++def get_first_two_lines(docstring):
++    if docstring:
++        lines = docstring.split('\n')
++        # 检查前两行是否都有内容
++        if len(lines) >= 2 and lines[0].strip() and lines[1].strip():
++            return ': '.join(lines[:2])
++        # 如果只有一行且有内容，返回第一行
++        elif len(lines) == 1 and lines[0].strip():
++            return lines[0].strip()
++    # 如果没有内容，返回空字符串
++    return ""
++
+ SYSTEM_PROMPT = """
+ # 代码块格式规范
+ 
+@@ -40,9 +52,38 @@ def greet(name):
  
  ## 可用模块
  - Python 自带的标准库模块。
@@ -591,10 +610,10 @@ index 3db0629..8d0a334 100644
 +```
 +
 +## QPython qpy 路径
-+当前的项目运行于手机的Python - QPython平台之上，QPython中有一个内置的库qpy，提供了一些内置路径变量，主要有：
++当前的项目运行于手机的Python - QPython平台之上，qpy是一个内置的库，提供了一些内置路径变量，主要有：
 +
-+- qpy.sdcard：外置存储跟目录
-+- qpy.home：QPython的根目录
++- qpy.sdcard：外置存储根目录
++- qpy.home：QPY根目录
 +- qpy.tmp：QPY缓存目录
 +- qpy.scripts：表示QPY脚本目录，别名QPY程序目录，用于保存QPY脚本
 +- qpy.projects：表示QPY项目根目录，别名也叫QPY应用根目录，用于保存QPY项目
@@ -602,17 +621,18 @@ index 3db0629..8d0a334 100644
 +- qpy.extra：表示QPY杂项目录，别名也叫QPY EXTRA目录，用于保存杂项
 +- qpy.snippets3：表示QPY代码片段目录，别名也叫QPY SNIPPETS目录，用于保存QPY代码片段
 +
-+qpy的内置变量调用方式如下：
++当需要使用这些目录时，需要先引入qpy，再像这个模块的变量来使用，比如：
 +```python
++import os
 +import qpy
-+print(qpy.projects)
++script_file = os.path.join(qpy.scripts,  "script.py")
 +```
 +
 +## Matplotlib 注意事项
  在使用 matplotlib 时，需要根据系统类型选择和设置合适的中文字体，否则图片里中文会乱码导致无法完成客户任务。
  示例代码如下：
  ```python
-@@ -88,7 +116,7 @@ else:
+@@ -88,7 +129,7 @@ else:
  ```
  
  ### runtime.display 方法
@@ -621,7 +641,7 @@ index 3db0629..8d0a334 100644
  示例：
  ```python
  runtime.display(path="path/to/image.png")
-@@ -126,6 +154,7 @@ current_python_code = __code_blocks__['main']
+@@ -126,6 +167,7 @@ current_python_code = __code_blocks__['main']
  如果需要保存成功执行的代码，可以在判断代码成功执行后，通过 __code_blocks__['main'] 获取自身的内容，无需嵌入代码块。
  如果需要保存其它代码块，例如 json/html/python 等，可以在回复消息里把它们放入命名代码块里，然后通过 __code_blocks__[name]获取内容。
  
@@ -629,7 +649,7 @@ index 3db0629..8d0a334 100644
  ## 全局变量 __result__
  - 类型: 字典。
  - 有效期：仅在本次执行的代码里有效。
-@@ -144,6 +173,282 @@ def main():
+@@ -144,6 +186,284 @@ def main():
  ```
  例如，如果需要分析客户端的文件，你可以生成代码读取文件内容放入 __result__变量返回后分析。
  
@@ -655,11 +675,11 @@ index 3db0629..8d0a334 100644
 +
 +"""
 +
++
 +try:
 +    other_qsl4a_funcs = ["""
 +### QPython androidhelper 所有接口
 +作为SL4A的扩展和补充，QSL4A有更多的特性，支持用户对安卓手机进行更强大的扩展，它们是:
-+
 +"""]
 +
 +    from androidhelper import Android
@@ -667,7 +687,9 @@ index 3db0629..8d0a334 100644
 +    for item_name in dir(droid):
 +        item = getattr(droid, item_name)
 +        if item_name[0] != '_' and item!=None:
-+            other_qsl4a_funcs.append(f"\n#### - {item.__doc__}")
++            line = get_first_two_lines(item.__doc__)
++            if line:
++                other_qsl4a_funcs.append(f"\n- {line}")
 +
 +    SYSTEM_PROMPT += "\n".join(other_qsl4a_funcs)
 +
@@ -846,7 +868,7 @@ index 3db0629..8d0a334 100644
 +-H "Authorization: Bearer <API_KEY>" \
 +-d '{
 +    "to_lang": ["zh-Hans", "pt", "en"],
-+    "text": "下表列出了国际语音字母 (IPA) 音素、扩展语音评估方法语音字母 (X-SAMPA) 符号以及亚马逊 Polly 支持的巴西葡萄牙语语音的相应变量。"
++    "text": "我爱中国"
 +}'
 +```
 +
@@ -862,7 +884,7 @@ index 3db0629..8d0a334 100644
 +}
 +payload = {
 +    "to_lang": ['zh-Hans', 'pt', 'en'],
-+    "text": "下表列出了国际语音字母 (IPA) 音素、扩展语音评估方法语音字母 (X-SAMPA) 符号以及亚马逊 Polly 支持的巴西葡萄牙语语音的相应变量。"
++    "text": "我爱中国"
 +}
 +
 +res = requests.post(
@@ -879,11 +901,11 @@ index 3db0629..8d0a334 100644
 +```json
 +{ "translations": [
 +        [
-+            {   "text": "下表列出了国际语音字母 (IPA) 音素、扩展语音评估方法语音字母 (X-SAMPA) 符号以及亚马逊 Polly 支持的巴西葡萄牙语语音的相应变量。",
++            {   "text": "我爱中国",
 +                "to": "zh-Hans" },
-+            {   "text": "A tabela a seguir lista as variáveis correspondentes para os fonemas do Alfabeto Internacional da Fala (IPA), os símbolos do Alfabeto Fonético do Método de Avaliação da Fala Estendida (X-SAMPA) e as vozes do Português Brasileiro suportadas pelo Amazon Polly.",
++            {   "text": "Eu amo a China",
 +                "to": "pt" },
-+            {   "text": "The following table lists the corresponding variables for the International Speech Alphabet (IPA) phonemes, the Extended Speech Assessment Method Phonetic Alphabet (X-SAMPA) symbols, and the Brazilian Portuguese voices supported by Amazon Polly.",
++            {   "text": "I love China",
 +                "to": "en" }
 +        ]
 +    ]
@@ -912,6 +934,13 @@ index 3db0629..8d0a334 100644
  # 生成Python代码规则
  - 确保代码在上述 Python 运行环境中可以无需修改直接执行
  - 如果需要安装额外库，先调用 runtime 对象的 install_packages 方法申请安装
+@@ -183,3 +503,6 @@ def main():
+ 
+ def get_system_prompt(settings):
+     pass
++
++
++#print(SYSTEM_PROMPT)
 diff --git a/aipyapp/aipy/prompt_en.py b/aipyapp/aipy/prompt_en.py
 index 42a9c04..cf099f5 100644
 --- a/aipyapp/aipy/prompt_en.py
@@ -1036,7 +1065,7 @@ index 7c4a3b7..5e1dda8 100644
  class TaskManager:
      def __init__(self, settings, console):
 diff --git a/aipyapp/default.toml b/aipyapp/default.toml
-index c389a16..ee220a3 100644
+index c389a16..d195f34 100644
 --- a/aipyapp/default.toml
 +++ b/aipyapp/default.toml
 @@ -4,10 +4,10 @@ record = true
@@ -1058,7 +1087,7 @@ index c389a16..ee220a3 100644
  4. 如果任务涉及到 HTTP/HTTPS 协议请求时，必须预设好 User-Agent 等请求头。
 -5. 如果用户任务中涉及保存你输出的内容，除用户指定目录外，默认的保存路径为当前工作目录。
 +5. 如果用户任务中涉及保存输出的内容，除非用户指定目录外，默认的保存路径为当前工作目录。
-+6. 接收到保存的指令时，不带入__session__, __history__, __code_blocks__
++6. 接收到保存的指令时，通过 __code_blocks__['main'] 获取自身的内容，无需嵌入代码块。
 +7. 保存成功后，不用再提示所保存的代码内容。
 +8. 检测到代码执行没有输出任何内容表明代码成功的结论后，不用再给下一步建议，结束任务。
 +8. 除非用户要求，否则在任务成功之后的任务总结后不用再给下一步建议。
@@ -1184,7 +1213,7 @@ index a4d352f..3fcbc8b 100644
  description = "AIPyApp: AI-Powered Python & Python-Powered AI"
  readme = "README.md"
 diff --git a/setup.py b/setup.py
-index 76c5cea..6af8890 100644
+index 76c5cea..4634ca5 100644
 --- a/setup.py
 +++ b/setup.py
 @@ -5,7 +5,7 @@
@@ -1192,7 +1221,7 @@ index 76c5cea..6af8890 100644
  
  setup(name='aipyapp-qpython',
 -      version='0.1.24.1',
-+      version='0.1.24.11',
++      version='0.1.24.12',
        description='AIPython is a Python command-line interpreter integrated with LLM.',
        author='The AIPYAPP Develpment Team',
        url='https://github.com/qpython-android/aipyapp',
