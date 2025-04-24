@@ -570,7 +570,7 @@ index 8cf3bb4..c25a03f 100644
          'grok': GrokClient,
          'trust': TrustClient,
 diff --git a/aipyapp/aipy/prompt.py b/aipyapp/aipy/prompt.py
-index 3db0629..2a13c9d 100644
+index 3db0629..8d0a334 100644
 --- a/aipyapp/aipy/prompt.py
 +++ b/aipyapp/aipy/prompt.py
 @@ -40,9 +40,37 @@ def greet(name):
@@ -590,17 +590,17 @@ index 3db0629..2a13c9d 100644
 +import qpy
 +```
 +
-+## QPython qpy 模块
-+当前的项目运行于手机的Python - QPython平台之上，QPython中有一个内置的库qpy，提供了一些内置变量，主要有：
++## QPython qpy 路径
++当前的项目运行于手机的Python - QPython平台之上，QPython中有一个内置的库qpy，提供了一些内置路径变量，主要有：
 +
-+- qpy.sdcard 表示外置存储跟目录
-+- qpy.home 表示QPython App的根目录
-+- qpy.tmp 表示QPython App的缓存目录，执行任务期间的临时文件可以自动保存于当前目录
-+- qpy.scripts 表示脚本根目录，如果生成的目标是一个脚本文件，除非用户指定，否则是指当前变量指示的目录
-+- qpy.projects 表示项目根目录，如果生成的目标是一个项目，除非用户指定，否则将自动在当前变量指示的目录内创建项目目录，并在main.py中写入项目主流程代码
-+- qpy.notebooks 表示Notebook根目录，如果生成的目标是notebook或文档，除非用户指定，否则是指当前变量指示的目录
-+- qpy.extra 表示Extra根目录，如果生成的目标即不是脚本，也不是项目或者notebook或文档，除非用户指定，否则是指当前变量指示的目录
-+- qpy.snippets3 表示Snippets根目录，当指令涉及到Snippets目录或者代码片段时，除非用户指定，否则是指当前变量指示的目录
++- qpy.sdcard：外置存储跟目录
++- qpy.home：QPython的根目录
++- qpy.tmp：QPY缓存目录
++- qpy.scripts：表示QPY脚本目录，别名QPY程序目录，用于保存QPY脚本
++- qpy.projects：表示QPY项目根目录，别名也叫QPY应用根目录，用于保存QPY项目
++- qpy.notebooks：表示QPY笔记目录，别名也叫QPY Notebook目录，用于保存QPY笔记
++- qpy.extra：表示QPY杂项目录，别名也叫QPY EXTRA目录，用于保存杂项
++- qpy.snippets3：表示QPY代码片段目录，别名也叫QPY SNIPPETS目录，用于保存QPY代码片段
 +
 +qpy的内置变量调用方式如下：
 +```python
@@ -621,13 +621,21 @@ index 3db0629..2a13c9d 100644
  示例：
  ```python
  runtime.display(path="path/to/image.png")
-@@ -144,6 +172,276 @@ def main():
+@@ -126,6 +154,7 @@ current_python_code = __code_blocks__['main']
+ 如果需要保存成功执行的代码，可以在判断代码成功执行后，通过 __code_blocks__['main'] 获取自身的内容，无需嵌入代码块。
+ 如果需要保存其它代码块，例如 json/html/python 等，可以在回复消息里把它们放入命名代码块里，然后通过 __code_blocks__[name]获取内容。
+ 
++
+ ## 全局变量 __result__
+ - 类型: 字典。
+ - 有效期：仅在本次执行的代码里有效。
+@@ -144,6 +173,282 @@ def main():
  ```
  例如，如果需要分析客户端的文件，你可以生成代码读取文件内容放入 __result__变量返回后分析。
  
 +
 +## QPython androidhelper 模块
-+Android 脚本层（简称 SL4A，之前称为 Android 脚本环境或 ASE）是一个库，允许直接在 Android 设备上创建和运行用各种脚本语言编写的脚本。QPython 继承和扩展了 SL4A 项目为 QSL4A，并将其集成为一个名为 androidhelper 的内置库。
++Android 脚本层（简称 SL4A，之前称为 Android 脚本环境或 ASE）是一个库，允许直接在 Android 设备上创建和运行用各种脚本语言编写的脚本。QPython 继承和扩展了 SL4A 项目为 QSL4A，并将其集成为一个名为 androidhelper 的内置库。在提到 QPY SL4A、QPython SL4A、QSL4A 或 QPY Android 模块时，我们指的是通过使用 androidhelper 模块接口进行开发的程序。
 +需要注意，大部分的QSL4A接口在调用时，如果没有返回输出，则表示成功
 +
 +### QPython androidhelper 有下列常用于编程协助的接口：
@@ -650,7 +658,7 @@ index 3db0629..2a13c9d 100644
 +try:
 +    other_qsl4a_funcs = ["""
 +### QPython androidhelper 所有接口
-+作为SL4A的扩展和补充，QPython的QSL4A有更多的特性，支持用户对安卓手机进行更强大的扩展，它们是:
++作为SL4A的扩展和补充，QSL4A有更多的特性，支持用户对安卓手机进行更强大的扩展，它们是:
 +
 +"""]
 +
@@ -667,7 +675,9 @@ index 3db0629..2a13c9d 100644
 +    SYSTEM_PROMPT += """
 +
 +## QPython FullScreenWapper 模块
-+FullScreenWapper是一个使用 QSL4A 中的 FullScreen UI API 开发全屏应用的 QSL4A GUI 框架，它允许您使用相同的 XML 布局设计出与 Android Java 应用类似的外观和体验，并支持响应 View 事件。它能帮助你使用 QSL4A 的 FullScreenUI API 进行编程变得与使用标准 GUI 框架进行编程一样简单。
++FullScreenWapper是一个使用 QSL4A 中的 FullScreen UI API 开发全屏应用的 GUI 框架，它允许您使用相同的 XML 布局设计出与 Android Java 应用类似的外观和体验，并支持响应 View 事件。它能帮助你使用 QSL4A 的 FullScreenUI API 进行编程变得与使用标准 GUI 框架进行编程一样简单。在提到 QPY GUI 或 QPython GUI 应用程序时，指的正是那些基于 FullScreenWrapper 开发的程序。
++
++需要注意，FullScreenWrapper 应用在工作时，在控制台没有返回输出，也表示成功
 +
 +### 特性
 +- An FullScreenWrapper2App class that manages the eventloop & a layout stack enabling easy parent->child->parent transitions
@@ -813,6 +823,10 @@ index 3db0629..2a13c9d 100644
 +    FullScreenWrapper2App.show_layout(DemoLayout())
 +    FullScreenWrapper2App.eventloop()
 +
++### 使用FullScreenWrapper 的注意事项
++
++- 更新ListView的内容需要调用set_listitems方法
++
 +```
 +
 +## PGPT 接口服务
@@ -898,8 +912,70 @@ index 3db0629..2a13c9d 100644
  # 生成Python代码规则
  - 确保代码在上述 Python 运行环境中可以无需修改直接执行
  - 如果需要安装额外库，先调用 runtime 对象的 install_packages 方法申请安装
+diff --git a/aipyapp/aipy/prompt_en.py b/aipyapp/aipy/prompt_en.py
+index 42a9c04..cf099f5 100644
+--- a/aipyapp/aipy/prompt_en.py
++++ b/aipyapp/aipy/prompt_en.py
+@@ -173,7 +173,7 @@ For example, if you need to analyze the client's file, you can generate code to
+ 
+ 
+ ## QPython `androidhelper` Module
+-The Android Scripting Layer (SL4A for short, formerly known as the Android Scripting Environment or ASE) is a library that allows you to create and run scripts written in various scripting languages directly on Android devices. QPython inherits and extends the SL4A project as QSL4A and integrates it into a built - in library called `androidhelper`.
++The Android Scripting Layer (SL4A for short, formerly known as the Android Scripting Environment or ASE) is a library that allows you to create and run scripts written in various scripting languages directly on Android devices. QPython inherits and extends the SL4A project as QSL4A and integrates it into a built - in library called `androidhelper`. When we refer to QPY SL4A, QPython SL4A, QSL4A, or QPY Android modules, we mean programs developed using the interfaces provided by the androidhelper module.
+ 
+ It should be noted that most QSL4A interfaces indicate success if there is no return output when called.
+ 
+@@ -214,7 +214,7 @@ As an extension and supplement to SL4A, QSL4A in QPython has more features, allo
+     SYSTEM_PROMPT += """
+ 
+ ## QPython FullScreenWapper Module
+-FullScreenWapper is a QSL4A GUI framework for developing full - screen applications using the FullScreen UI API in QSL4A. It allows you to design an appearance and experience similar to Android Java applications using the same XML layouts and respond to View events. It makes programming with the FullScreen UI API in QSL4A as simple as programming with a standard GUI framework.
++FullScreenWapper is a QSL4A GUI framework for developing full - screen applications using the FullScreen UI API in QSL4A. It allows you to design an appearance and experience similar to Android Java applications using the same XML layouts and respond to View events. It makes programming with the FullScreen UI API in QSL4A as simple as programming with a standard GUI framework. When we refer to QPY GUI or QPython GUI applications, we are talking about programs developed using FullScreenWrapper.
+ 
+ ### Features:
+ - A `FullScreenWrapper2App` class that manages the event loop and a layout stack, enabling easy parent -> child -> parent transitions.
+diff --git a/aipyapp/aipy/runner.py b/aipyapp/aipy/runner.py
+index 7e75cd9..609e159 100644
+--- a/aipyapp/aipy/runner.py
++++ b/aipyapp/aipy/runner.py
+@@ -24,6 +24,16 @@ import random
+ import traceback
+ """
+ 
++import signal
++
++# 定义处理 Ctrl+C 的函数
++def signal_handler(sig, frame):
++    raise KeyboardInterrupt
++
++# 注册信号处理器
++signal.signal(signal.SIGINT, signal_handler)
++
++
+ def is_json_serializable(obj):
+     try:
+         json.dumps(obj)  # 尝试序列化对象
+@@ -75,6 +85,12 @@ class Runner(Runtime):
+         except (SystemExit, Exception) as e:
+             result['errstr'] = str(e)
+             result['traceback'] = traceback.format_exc()
++
++        except KeyboardInterrupt:
++            #result['errstr'] = "Execution interrupted by user."
++            #result['traceback'] = None  # 可以选择不记录 traceback
++            pass
++
+         finally:
+             sys.stdout = old_stdout
+             sys.stderr = old_stderr
+@@ -159,4 +175,3 @@ class Runner(Runtime):
+         else:
+             vars = vars if is_json_serializable(vars) else '<filtered>'
+         return vars
+-    
+\ No newline at end of file
 diff --git a/aipyapp/aipy/task.py b/aipyapp/aipy/task.py
-index d34a5e0..6f96f11 100644
+index d34a5e0..37dd42f 100644
 --- a/aipyapp/aipy/task.py
 +++ b/aipyapp/aipy/task.py
 @@ -113,11 +113,11 @@ class Task:
@@ -921,7 +997,7 @@ index d34a5e0..6f96f11 100644
          prompt['platform'] = platform.platform()
          prompt['today'] = date.today().isoformat()
 -        prompt['work_dir'] = '工作目录为当前目录，默认在当前目录下创建文件'
-+        prompt['work_dir'] = '临时目录为qpy.tmp指示的目录'
++        prompt['work_dir'] = '工作目录为qpy.tmp，默认在qpy.tmp下创建文件'
          if self.console.quiet:
              prompt['matplotlib'] = "我现在用的是 matplotlib 的 Agg 后端，请默认用 plt.savefig() 保存图片后用 runtime.display() 显示，禁止使用 plt.show()"
              prompt['wxPython'] = "你回复的Markdown 消息中，可以用 ![图片](图片路径) 的格式引用之前创建的图片，会显示在 wx.html2 的 WebView 中"
@@ -960,7 +1036,7 @@ index 7c4a3b7..5e1dda8 100644
  class TaskManager:
      def __init__(self, settings, console):
 diff --git a/aipyapp/default.toml b/aipyapp/default.toml
-index c389a16..4043c5e 100644
+index c389a16..ee220a3 100644
 --- a/aipyapp/default.toml
 +++ b/aipyapp/default.toml
 @@ -4,10 +4,10 @@ record = true
@@ -968,7 +1044,7 @@ index c389a16..4043c5e 100644
  
  system_prompt = """
 -# 你是一个先进的人工智产品，产品名为AiPy，同时你也是一名优秀的Python工程师，你能够根据用户需求，自己开发出所需的应用，解决用户的问题。
-+# 你是一个先进的人工智助手，名为AIPyApp，同时也是一名优秀的Python工程师，你能够根据用户需求，自己开发出所需的应用，解决用户的问题。
++# 你是一个先进的人工智助手，名为AIPyApp，同时也是一名卓越的Python工程师，你能够根据用户需求，自己开发出所需的应用，解决用户的问题。
  
  # 你的职责是分析并完成客户提交给你的任务，工作内容如下：
 -1. 如果能直接回答，直接回答客户的问题。
@@ -976,6 +1052,19 @@ index c389a16..4043c5e 100644
  2. 你已得到用户的充分授权，可以完成对当前系统的所有操作任务。
  3. 复杂任务需要进行任务拆解，给出简单的 TodoList 并根据任务拆分逐步完成任务。
  4. 根据拆解出的子任务，给出最优的 Python 技术方案，比如：优先考虑Python Packages 选择或直接调用API服务，来提高效率。在选择技术方案时，需要考虑当前操作系统类型。
+@@ -19,7 +19,11 @@ system_prompt = """
+ 2. 对于你不确定的最新数据，需要通过网络搜索或打开网页来获取最新数据及信息，严禁编撰数据。
+ 3. 如果任务涉及对文件进行数据分析，如：Excel 文件，需要先对文件结构进行预览，获取表头，严禁模拟表头；
+ 4. 如果任务涉及到 HTTP/HTTPS 协议请求时，必须预设好 User-Agent 等请求头。
+-5. 如果用户任务中涉及保存你输出的内容，除用户指定目录外，默认的保存路径为当前工作目录。
++5. 如果用户任务中涉及保存输出的内容，除非用户指定目录外，默认的保存路径为当前工作目录。
++6. 接收到保存的指令时，不带入__session__, __history__, __code_blocks__
++7. 保存成功后，不用再提示所保存的代码内容。
++8. 检测到代码执行没有输出任何内容表明代码成功的结论后，不用再给下一步建议，结束任务。
++8. 除非用户要求，否则在任务成功之后的任务总结后不用再给下一步建议。
+ """
+ 
+ [llm.trustoken]
 diff --git a/aipyapp/default_en.toml b/aipyapp/default_en.toml
 index e17a56a..0163978 100644
 --- a/aipyapp/default_en.toml
@@ -1095,7 +1184,7 @@ index a4d352f..3fcbc8b 100644
  description = "AIPyApp: AI-Powered Python & Python-Powered AI"
  readme = "README.md"
 diff --git a/setup.py b/setup.py
-index 76c5cea..5e5bfa9 100644
+index 76c5cea..6af8890 100644
 --- a/setup.py
 +++ b/setup.py
 @@ -5,7 +5,7 @@
@@ -1103,7 +1192,7 @@ index 76c5cea..5e5bfa9 100644
  
  setup(name='aipyapp-qpython',
 -      version='0.1.24.1',
-+      version='0.1.24.9',
++      version='0.1.24.11',
        description='AIPython is a Python command-line interpreter integrated with LLM.',
        author='The AIPYAPP Develpment Team',
        url='https://github.com/qpython-android/aipyapp',
