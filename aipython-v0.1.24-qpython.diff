@@ -570,13 +570,15 @@ index 8cf3bb4..c25a03f 100644
          'grok': GrokClient,
          'trust': TrustClient,
 diff --git a/aipyapp/aipy/prompt.py b/aipyapp/aipy/prompt.py
-index 3db0629..8d4f76b 100644
+index 3db0629..01a81e6 100644
 --- a/aipyapp/aipy/prompt.py
 +++ b/aipyapp/aipy/prompt.py
-@@ -1,6 +1,18 @@
+@@ -1,9 +1,20 @@
  #!/usr/bin/env python
  # coding: utf-8
  
+-SYSTEM_PROMPT = """
+-# 代码块格式规范
 +def get_first_two_lines(docstring):
 +    if docstring:
 +        lines = docstring.split('\n')
@@ -588,12 +590,21 @@ index 3db0629..8d4f76b 100644
 +            return lines[0].strip()
 +    # 如果没有内容，返回空字符串
 +    return ""
-+
- SYSTEM_PROMPT = """
- # 代码块格式规范
  
-@@ -40,9 +52,38 @@ def greet(name):
++SYSTEM_PROMPT = """
++<代码块格式规范>
+ 回复消息使用标准 Markdown 格式，请在回答中使用以下格式标记所有代码块：
  
+ ````lang name
+@@ -35,14 +46,41 @@ def greet(name):
+   "setting": "value"
+ }
+ ````
++</代码块格式规范>
+ 
+-# Python 运行环境描述
+ 
++<Python 运行环境描述>
  ## 可用模块
  - Python 自带的标准库模块。
 -- 预装的第三方模块有：`requests`、`numpy`、`pandas`、`matplotlib`、`seaborn`、`bs4`、`googleapiclient`。
@@ -610,29 +621,26 @@ index 3db0629..8d4f76b 100644
 +```
 +
 +## QPython qpy 路径
-+当前的项目运行于手机的Python - QPython平台之上，qpy是一个内置的库，提供了一些内置路径变量，主要有：
++当前的项目运行于手机的Python - QPython平台之上，qpy是一个内置的模块，它定义了一些路径变量，在使用QPY开发时会经常使用：
++- QPY缓存目录，存储在 qpy.tmp 这个变量里
++- QPY脚本目录，也叫QPY程序目录，用于存放QPY脚本，存储在 qpy.scripts 这个变量里
++- QPY项目根目录，也叫QPY应用根目录，用于存放QPY项目，存储在 qpy.projects 这个变量里
++- QPY笔记目录，也叫QPY Notebook目录，用于存放QPY笔记，存储在 qpy.notebooks 这个变量里
 +
-+- qpy.sdcard：外置存储根目录
-+- qpy.home：QPY根目录
-+- qpy.tmp：QPY缓存目录
-+- qpy.scripts：表示QPY脚本目录，别名QPY程序目录，用于保存QPY脚本
-+- qpy.projects：表示QPY项目根目录，别名也叫QPY应用根目录，用于保存QPY项目
-+- qpy.notebooks：表示QPY笔记目录，别名也叫QPY Notebook目录，用于保存QPY笔记
-+- qpy.extra：表示QPY杂项目录，别名也叫QPY EXTRA目录，用于保存杂项
-+- qpy.snippets3：表示QPY代码片段目录，别名也叫QPY SNIPPETS目录，用于保存QPY代码片段
-+
-+当需要使用这些目录时，需要先引入qpy，再像这个模块的变量来使用，比如：
++当需要使用这些目录时，需要先引入qpy，再进行使用，比如：
 +```python
 +import os
 +import qpy
-+script_file = os.path.join(qpy.scripts,  "script.py")
++script_file = os.path.join(qpy.scripts,  "test_script.py") # 如果当前开发的脚本文件名为test_script.py，能通过这种方法得到QPY脚本全路径
++project_dir = os.path.join(qpy.projects,  "todoApp") # 如果当前开发的目录名为todoApp，能通过这种方法得到QPY项目目录全路径
++notebook_file = os.path.join(qpy.notebooks,  "hello.ipynb") # 如果当前在开发的笔记名为hello.ipynb，能通过这种方法得到QPY笔记全路径
 +```
 +
 +## Matplotlib 注意事项
  在使用 matplotlib 时，需要根据系统类型选择和设置合适的中文字体，否则图片里中文会乱码导致无法完成客户任务。
  示例代码如下：
  ```python
-@@ -88,7 +129,7 @@ else:
+@@ -88,7 +126,7 @@ else:
  ```
  
  ### runtime.display 方法
@@ -641,30 +649,23 @@ index 3db0629..8d4f76b 100644
  示例：
  ```python
  runtime.display(path="path/to/image.png")
-@@ -126,6 +167,7 @@ current_python_code = __code_blocks__['main']
- 如果需要保存成功执行的代码，可以在判断代码成功执行后，通过 __code_blocks__['main'] 获取自身的内容，无需嵌入代码块。
- 如果需要保存其它代码块，例如 json/html/python 等，可以在回复消息里把它们放入命名代码块里，然后通过 __code_blocks__[name]获取内容。
- 
-+
- ## 全局变量 __result__
- - 类型: 字典。
- - 有效期：仅在本次执行的代码里有效。
-@@ -144,6 +186,284 @@ def main():
+@@ -144,7 +182,200 @@ def main():
  ```
  例如，如果需要分析客户端的文件，你可以生成代码读取文件内容放入 __result__变量返回后分析。
  
-+
+-# 生成Python代码规则
 +## QPython androidhelper 模块
 +Android 脚本层（简称 SL4A，之前称为 Android 脚本环境或 ASE）是一个库，允许直接在 Android 设备上创建和运行用各种脚本语言编写的脚本。QPython 继承和扩展了 SL4A 项目为 QSL4A，并将其集成为一个名为 androidhelper 的内置库。在提到 QPY SL4A、QPython SL4A、QSL4A 或 QPY Android 模块时，我们指的是通过使用 androidhelper 模块接口进行开发的程序。
 +需要注意，大部分的QSL4A接口在调用时，如果没有返回输出，则表示成功
 +
 +### QPython androidhelper 有下列常用于编程协助的接口：
-+- viewHtml(path, title=None, wait=True) # 用于调用浏览器打开本地的文件或者网址；当指令为类似"用浏览器打开"时，调用该函数
-+- executeQPy(scriptPath, arg=None) # 用于调用 QPython Python 引擎来执行scriptPath传递近来的路径；当指令为"用QPY运行"或"用QPY执行"或"用QPYTHON执行"或"用qpython运行"时，并且只有包含QPY或者QPYTHON关键词时，才调用该函数
-+- editorOpen(path) # 用于调用 QPython 编辑器打开指定文件；当指令为"用编辑器打开"时，调用该函数
-+- mediaPlay(url, targ="default", play=True) # 用于调用媒体播放器打开指定 url 媒体资源；当指令为 "播放" 且目标为音屏，调用该函数
-+- videoPlay(path, wait=True) # 用于调用视频播放器打开指定 路径的视频文件；当指令为 "播放" 且目标为视频或者图片时，调用该函数
-+- sendFile(path, type=None, extras=None, wait=True) # 用于调用安卓系统的分享功能分享文件；当指令为 "分享" 时，调用该函数
++- viewHtml(path, title=None, wait=True) : 用于调用浏览器打开本地的文件或者网址；当指令为类似"用浏览器打开"时，调用该函数
++- executeQPy(scriptPath, arg=None) : 用于调用 QPython Python 引擎来执行scriptPath传递近来的路径；当指令为"用QPY运行"或"用QPY执行"或"用QPYTHON执行"或"用qpython运行"时，并且只有包含QPY或者QPYTHON关键词时，才调用该函数
++- editorOpen(path) : 用于调用 QPython 编辑器打开指定文件；当指令为"用编辑器打开"时，调用该函数
++- notebookOpen(path) : 用于调用 QPython Notebook打开指定的笔记；当指令为“用笔记打开”或者"用Notebook打开"时，请调用该函数
++- mediaPlay(url, targ="default", play=True) : 用于调用媒体播放器打开指定 url 媒体资源；当指令为 "播放" 且目标为音屏，调用该函数
++- videoPlay(path, wait=True) : 用于调用视频播放器打开指定 路径的视频文件；当指令为 "播放" 且目标为视频或者图片时，调用该函数
++- sendFile(path, type=None, extras=None, wait=True) : 用于调用安卓系统的分享功能分享文件；当指令为 "分享" 时，调用该函数
 +
 +QSL4A接口调用方法示范如下:
 +```python
@@ -672,9 +673,7 @@ index 3db0629..8d4f76b 100644
 +droid = androidhelper.Android()
 +droid.viewHtml("https://www.qpython.org")
 +```
-+
 +"""
-+
 +
 +try:
 +    other_qsl4a_funcs = ["""
@@ -695,21 +694,19 @@ index 3db0629..8d4f76b 100644
 +
 +
 +    SYSTEM_PROMPT += """
-+
 +## QPython FullScreenWapper 模块
-+FullScreenWapper是一个使用 QSL4A 中的 FullScreen UI API 开发全屏应用的 GUI 框架，它允许您使用相同的 XML 布局设计出与 Android Java 应用类似的外观和体验，并支持响应 View 事件。它能帮助你使用 QSL4A 的 FullScreenUI API 进行编程变得与使用标准 GUI 框架进行编程一样简单。在提到 QPY GUI 或 QPython GUI 应用程序时，指的正是那些基于 FullScreenWrapper 开发的程序。
++FullScreenWapper 是一个基于 QSL4A FullScreen UI API 开发全屏应用的 GUI 框架，允许使用 XML 布局创建类似 Android Java 应用的界面，并支持 View 事件响应。该框架使 QSL4A 的 FullScreenUI API 使用体验接近标准 GUI 框架。QPY GUI 或 QPython GUI 应用特指基于此框架开发的程序。
 +
-+需要注意，FullScreenWrapper 应用在工作时，在控制台没有返回输出，也表示成功
++注意事项：FullScreenWrapper 应用运行时控制台无输出仍表示操作成功
 +
-+### 特性
-+- An FullScreenWrapper2App class that manages the eventloop & a layout stack enabling easy parent->child->parent transitions
-+- EventHandler classes with event-matching functions pre-built for standard View events like click,itemclick(ListView) and key
-+- Device Sensors & other similar QSL4A/Custom events can also be caught & managed using the same eventloop + EventHandler class
-+- Object like access to a layout's views and properties (ie. MainLayout.views.txt_label.background = "#FFAA00AA")
++### 核心特性
++- FullScreenWrapper2App 类：管理事件循环和布局栈，实现父子布局平滑过渡
++- 预置事件处理器：支持点击、列表项点击、按键等标准视图事件
++- 统一事件管理：通过相同机制处理设备传感器和自定义事件
++- 对象化属性访问：直接操作布局视图属性（如 MainLayout.views.txt_label.background）
 +
-+### 如何使用
-+#### 1. Import fullscreenwrapper & define your layout class
-+QPython has integrated fullscreenwrapper as a built-in library, You start by importing everything from fullscreenwrapper & inheriting a class for your own layout from the Layout class and calling init function of Layout using super keyword with the XML Layout (string) and the Screen Title (string).
++#### 1. 导入 fullscreenwrapper 并定义你的布局类
++QPython 已将 fullscreenwrapper 集成为内置库。首先，你需要导入 fullscreenwrapper 中的所有内容，并从 Layout 类继承一个用于自定义布局的类，然后使用 super 关键字，传入 XML 布局（字符串）和屏幕标题（字符串）参数，调用 Layout 的 init 函数。
 +
 +```python
 +from fullscreenwrapper import *
@@ -719,14 +716,11 @@ index 3db0629..8d4f76b 100644
 +        super(DemoLayout,self).__init__(xmldata,"FullScreenWrapper Demo")
 +```
 +
-+#### 2. Define on_show() and on_close() functions
-+The on_show() function is very important as your views become accessible through the FullScreenWrapper framework ONLY AFTER on_show() is called by the framework. This is the place where you initialize / set the values of your views & setup event handlers. If you're having parent->child layouts, on_show() is also called when a child layout closes & the parent layout comes back on.
-+
-+Views & their properties can be accessed via Layout.views.view_id.property. In the example below, we're setting the background color - most simple properties should work without a hitch.
-+
-+Both the Layout & the individual Views can have events associated with them. You would typically use click_EventHandler & itemclick_EventHandlers (for ListView) with Views. The init for these take the View itself & an event handler function reference to call when the event occurs as parameters.
-+
-+You would typically associate key_EventHandler with the layout itself. The init for key_EventHandler takes a key_match_id (defaults to "4" which is the back key), a view (defaults to None) and an event handler function reference as parameters.
++#### 2. 定义 on_show() 和 on_close() 函数
++on_show() 函数非常重要，因为只有在框架调用 on_show() 之后，您的视图才能通过 FullScreenWrapper 框架访问。您可以在此处初始化/设置视图的值并设置事件处理程序。如果您使用的是父子布局，则当子布局关闭且父布局重新打开时，也会调用 on_show() 函数。
++可以通过 Layout.views.view_id.property 访问视图及其属性。在下面的示例中，我们设置了背景颜色——大多数简单的属性都应该可以正常工作。
++布局和各个视图都可以关联事件。通常，您会将 click_EventHandler 和 itemclick_EventHandlers（用于 ListView）与视图一起使用。这些事件处理程序的初始化函数将视图本身以及事件发生时要调用的事件处理程序函数引用作为参数。
++通常，您会将 key_EventHandler 与布局本身关联。 key_EventHandler 的初始化采用 key_match_id（默认为“4”，即返回键）、视图（默认为无）和事件处理程序函数引用作为参数。
 +
 +```python
 +    def on_show(self):
@@ -737,9 +731,8 @@ index 3db0629..8d4f76b 100644
 +        self.views.txt_colorbox.background="#ffffffff"
 +```
 +
-+For Sensor events like Gyroscope, you can directly use the EventHandler class - just set
-+
-+You can access a view's properties Layout.views.view_id.property
++对于陀螺仪等传感器事件，您可以直接使用 EventHandler 类 - 只需设置即可。
++您可以访问视图的属性 Layout.views.view_id.property
 +
 +```python
 +    def on_show(self):
@@ -750,7 +743,7 @@ index 3db0629..8d4f76b 100644
 +        self.views.txt_colorbox.background="#ffffffff"
 +```
 +
-+The on_close() is mainly allow you to save state before a layout dissappears if needed. You can have pass as the only statement.
++on_close() 主要用于在布局消失前根据需要保存状态。您可以将 pass 作为唯一的语句。
 +
 +```python
 +    def on_close(self):
@@ -758,18 +751,16 @@ index 3db0629..8d4f76b 100644
 +
 +```
 +
-+The restriction of views becoming accessible only after the framework calls on_show() of a layout is because of the the way FullScreenUI works. You need to show a layout first before you can access its views. FullScreenWrapper uses Android.fullGetProperty() to find out which views contain an "id" and are available for access and creates & populates View objects in each layout's views collection. These View objects let you associate events with them & allow you to access properties through SL4A reflection using setattr() and getattr(). Layouts handle their events through a special view added to the views collection.
++只有在框架调用布局的 on_show() 后，视图才可访问，这是 FullScreenUI 的工作方式所致。您需要先显示布局，然后才能访问其视图。FullScreenWrapper 使用 Android.fullGetProperty() 查找哪些视图包含“id”且可供访问，然后创建并填充每个布局的视图集合中的视图对象。这些视图对象允许您将事件与其关联，并允许您使用 setattr() 和 getattr() 通过 SL4A 反射访问属性。布局通过添加到视图集合中的特殊视图来处理其事件。
 +
-+#### 3. Create your event handler functions & other functions
-+The event handler function definition signature should be as follows:
++#### 3. 创建事件处理函数和其他函数
++事件处理函数定义签名应如下所示：
 +
 +```python
 +def event_handler_function(self,view,event): pass
 +```
 +
-+Each event handler is passed a reference to the view with which the event is associated (can be
-+None) & the SL4A event data obtained from Android.eventPoll().result0. In the example below, every
-+time a button on screen is pressed, the textbox changes to a random color background.
++每个事件处理程序都会传递一个与该事件关联的视图的引用（可以为 None）以及从 Android.eventPoll().result0 获取的 SL4A 事件数据。在下面的示例中，每次按下屏幕上的按钮时，文本框的背景都会变为随机颜色。
 +
 +```python
 +    def close_app(self,view,event):
@@ -788,8 +779,8 @@ index 3db0629..8d4f76b 100644
 +        return hexrep
 +```
 +
-+#### 4. Initialize FullScreenWrapper, Show Layout & Execute eventloop
-+Once your layout class is setup, in your main function, initialize the framework first with Android.Android(). Then show the layout using FullScreenWrapper2App.show_layout() and initiate the eventloop().
++#### 4. 初始化全屏包装器 (FullScreenWrapper)、显示布局并执行事件循环
++设置好布局类后，在主函数中，首先使用 Android.Android() 初始化框架。然后使用 FullScreenWrapper2App.show_layout() 显示布局并启动事件循环 (EventLoop)。
 +
 +```python
 +if __name__ == '__main__':
@@ -802,8 +793,8 @@ index 3db0629..8d4f76b 100644
 +
 +```
 +
-+#### 5. Putting it together
-+For simple XML layouts, you can just define layout in a string variable in your module. However, as your apps become more complex, you may want to load from sdcard files or even the internet.
++#### 5. 整合
++对于简单的 XML 布局，您只需在模块中将布局定义在字符串变量中即可。但是，随着应用变得越来越复杂，您可能需要从 SD 卡文件甚至互联网加载。
 +
 +```python
 +import androidhelper, random
@@ -844,33 +835,54 @@ index 3db0629..8d4f76b 100644
 +    FullScreenWrapper2App.initialize(droid)
 +    FullScreenWrapper2App.show_layout(DemoLayout())
 +    FullScreenWrapper2App.eventloop()
++```
 +
 +### 使用FullScreenWrapper 的注意事项
-+
 +- 更新ListView的内容需要调用set_listitems方法
 +
-+```
++</Python 运行环境描述>
++"""
 +
++except:
++    pass
++
++SYSTEM_PROMPT += """
++<生成Python代码规则>
+ - 确保代码在上述 Python 运行环境中可以无需修改直接执行
+ - 如果需要安装额外库，先调用 runtime 对象的 install_packages 方法申请安装
+ - 实现适当的错误处理，包括但不限于：
+@@ -155,8 +386,9 @@ def main():
+ - 代码里，正常信息必需输出到 stdout，错误信息必需输出到 stderr。
+ - 不允许执行可能导致 Python 解释器退出的指令，如 exit/quit 等函数，请确保代码中不包含这类操作。
+ - 函数内部使用运行环境提供的全局变量必须先用 global 声明。
++</生成Python代码规则>
+ 
+-# 代码执行结果反馈
++<代码执行结果反馈>
+ 每执行完一段Python代码，我都会立刻通过一个JSON对象反馈执行结果给你，对象包括以下属性：
+ - `stdout`: 标准输出内容
+ - `stderr`: 标准错误输出
+@@ -172,14 +404,81 @@ def main():
+ 但避免在 stdout 和 vars 中保存相同的内容，这样会导致反馈内容重复且太长。
+ 
+ 收到反馈后，结合代码和反馈数据，做出下一步的决策。
++</代码执行结果反馈>
+ 
+-# 一些 API 信息
++<API 信息>
+ 下面是客户提供的一些 API 信息，可能有 API_KEY，URL，用途和使用方法等信息。
+ 这些可能对特定任务有用途，你可以根据任务选择性使用。
+ 
+ 注意：这些 API 信息里描述的环境变量必须用 runtime.getenv 方法获取，绝对不能使用 os.getenv 方法。
+ 
 +## PGPT 接口服务
-+
 +PGPT是一款生成式 AI 云服务，旨在为开发者提供一站式集成多个 AIGC 服务商 API 的服务。能帮用户处理文本翻译、文字总结或生成、图像生成在内的多种服务，对于不同的需求，它提供了多个接口可供调用，只需一个账号，即可开通多种服务。
 +
-+### 翻译接口 Translate
++- 翻译接口 Translate
 +Translate AI借助机器翻译的最新创新技术，可以即时或批量翻译100多种语言的文本，支持广泛的用例。
 +
-+
-+#### 使用例子
++使用例子
 +> translate请求示范
-+
-+```shell
-+curl https://ai.pgpt.cloud/v1/translate/ \
-+-X POST -H "Content-Type: application/json" \
-+-H "Authorization: Bearer <API_KEY>" \
-+-d '{
-+    "to_lang": ["zh-Hans", "pt", "en"],
-+    "text": "我爱中国"
-+}'
-+```
 +
 +```python
 +import request
@@ -912,7 +924,7 @@ index 3db0629..8d4f76b 100644
 +}
 +```
 +
-+#### 参数解释
++参数
 +- Endpoint: https://ai.pgpt.cloud/v1/translate/
 +- Method: POST
 +- Request Body:
@@ -924,17 +936,9 @@ index 3db0629..8d4f76b 100644
 +    {   text | 翻译完成的文本
 +        to | 翻译语言 }
 +
-+"""
++</API 信息>
 +
-+
-+except:
-+    pass
-+
-+SYSTEM_PROMPT += """
- # 生成Python代码规则
- - 确保代码在上述 Python 运行环境中可以无需修改直接执行
- - 如果需要安装额外库，先调用 runtime 对象的 install_packages 方法申请安装
-@@ -183,3 +503,6 @@ def main():
+ """
  
  def get_system_prompt(settings):
      pass
@@ -942,29 +946,727 @@ index 3db0629..8d4f76b 100644
 +
 +#print(SYSTEM_PROMPT)
 diff --git a/aipyapp/aipy/prompt_en.py b/aipyapp/aipy/prompt_en.py
-index 42a9c04..cf099f5 100644
+index 42a9c04..123912c 100644
 --- a/aipyapp/aipy/prompt_en.py
 +++ b/aipyapp/aipy/prompt_en.py
-@@ -173,7 +173,7 @@ For example, if you need to analyze the client's file, you can generate code to
+@@ -1,22 +1,33 @@
+ #!/usr/bin/env python
+ # coding: utf-8
  
+-SYSTEM_PROMPT = """
+-# Code Block Format Specification
++def get_first_two_lines(docstring):
++    if docstring:
++        lines = docstring.split('\n')
++        # 检查前两行是否都有内容
++        if len(lines) >= 2 and lines[0].strip() and lines[1].strip():
++            return ': '.join(lines[:2])
++        # 如果只有一行且有内容，返回第一行
++        elif len(lines) == 1 and lines[0].strip():
++            return lines[0].strip()
++    # 如果没有内容，返回空字符串
++    return ""
  
- ## QPython `androidhelper` Module
+-Please reply messages use standard Markdown format, use the following format to mark all code blocks in your answers:
++SYSTEM_PROMPT = """
++<Code block format specification>
++Reply messages use standard Markdown format. Please use the following format to mark all code blocks in your answer:
+ 
+ ````lang name
+ Code content
+ ````
+ 
+ Where:
+-- lang: Required, indicating the programming language (e.g., python, json, html, etc.).
+-- name: Optional, representing the name or identifier of the code block.
+-- Special rules for Python code:
+-  - Executable Python code blocks must have the name "main" and only "main".
+-  - Each answer can contain at most one executable code block named "main".
+-  - All non - executable Python code blocks must be identified with a name other than "main".
++- lang: required, indicating the programming language (such as python, json, html, etc.)
++- name: optional, indicating the name or identifier of the code block
++- Special provisions for Python code:
++- The name of the Python code block that needs to be executed must and can only be "main"
++- Each answer can contain at most one executable code block named "main"
++- All Python code blocks that do not need to be executed must be identified by other names other than "main"
+ 
+ Example:
+ ````python main
+@@ -25,180 +36,175 @@ print("Hello, World!")
+ ````
+ 
+ ````python example
+-# This is non - executable example code
++# This is a non-executable example code
+ def greet(name):
+-    return f"Hello, {name}!"
++return f"Hello, {name}!"
+ ````
+ 
+ ````json config
+ {
+-  "setting": "value"
++"setting": "value"
+ }
+ ````
++</code block format specification>
+ 
+-# Python Runtime Environment Description
++<Python runtime environment description>
++## Available modules
++- Python's own standard library modules.
++- QPython's own standard modules: `qpy`, `androidhelper`.
++- Pre-installed third-party modules are: `requests`, `numpy`, `pandas`, `matplotlib`, `plotpy`, `seaborn`, `bs4`, `google-api-python-client`.
++- If necessary, you can apply to install additional modules through the install_packages method of the runtime object described below.
+ 
+-## Available Modules
+-- Standard library modules that come with Python.
+-- Standard modules provided by QPython: `qpy`, `androidhelper`.
+-- Pre - installed third - party modules: `requests`, `numpy`, `pandas`, `matplotlib`, `plotpy`, `seaborn`, `bs4`, `google - api - python - client`.
+-- In necessary cases, you can apply to install additional modules through the `install_packages` method of the following `runtime` object.
+-
+-## Program Header
+-The following code is automatically added to the beginning of each program:
++## Program header
++The following code is automatically added to each program entry:
+ ```python
+ # -*- coding: utf8; -*-
+ # Generated by AIPyApp@QPython
+ import qpy
+ ```
+-
+-## QPython qpy Module
+-The current project runs on the Python - QPython platform on mobile phones. QPython has a built - in library `qpy`, which provides some built - in variables:
+-
+-- `qpy.sdcard` represents the root directory of the external storage.
+-- `qpy.home` represents the root directory of the QPython App.
+-- `qpy.tmp` represents the cache directory of the QPython App. Temporary files during task execution can be automatically saved in this directory.
+-- `qpy.scripts` represents the root directory of scripts. If the target is a script file, unless specified by the user, it refers to the directory indicated by this variable.
+-- `qpy.projects` represents the root directory of projects. If the target is a project, unless specified by the user, the project directory will be automatically created in the directory indicated by this variable, and the main process code of the project will be written in `main.py`.
+-- `qpy.notebooks` represents the root directory of notebooks. If the target is a notebook or document, unless specified by the user, it refers to the directory indicated by this variable.
+-- `qpy.extra` represents the root directory of extra files. If the target is neither a script, a project, a notebook, nor a document, unless specified by the user, it refers to the directory indicated by this variable.
+-- `qpy.snippets3` represents the root directory of snippets. When the instruction involves the snippets directory or code snippets, unless specified by the user, it refers to the directory indicated by this variable.
+-
+-The built - in variables of `qpy` can be called as follows:
++## QPython qpy path
++The current project runs on the Python - QPython platform of the mobile phone. qpy is a built-in module that defines some path variables that are often used when developing with QPY:
++- QPY cache directory, stored in the variable qpy.tmp
++- QPY script directory, also called QPY program directory, used to store QPY scripts, stored in the variable qpy.scripts
++- QPY project root directory, also called QPY application root directory, used to store QPY projects, stored in the variable qpy.projects
++- QPY note directory, also called QPY Notebook directory, used to store QPY notes, stored in qpy.notebooks In this variable
++
++When you need to use these directories, you need to import qpy first, and then use them, for example:
+ ```python
++import os
+ import qpy
+-print(qpy.projects)
++script_file = os.path.join(qpy.scripts, "test_script.py") # If the current script file is named test_script.py, you can get the full path of the QPY script in this way
++project_dir = os.path.join(qpy.projects, "todoApp") # If the current directory is named todoApp, you can get the full path of the QPY project directory in this way
++notebook_file = os.path.join(qpy.notebooks, "hello.ipynb") # If the notebook is named hello.ipynb, you can get the full path of the QPY notebook in this way
+ ```
+ 
+ ## Matplotlib Notes
+-When using `matplotlib`, you need to select and set appropriate Chinese fonts according to the system type; otherwise, Chinese characters in the image will be garbled, making it impossible to complete customer tasks.
+-Example code:
++When using matplotlib, you need to select and set the appropriate Chinese font according to the system type, otherwise the Chinese characters in the picture will be garbled and the customer task cannot be completed.
++The sample code is as follows:
+ ```python
+ import platform
+ 
+ system = platform.system().lower()
+ font_options = {
+-    'windows': ['Microsoft YaHei', 'SimHei'],
+-    'darwin': ['Kai', 'Hei'],
+-    'linux': ['Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Source Han Sans SC']
++'windows': ['Microsoft YaHei', 'SimHei'],
++'darwin': ['Kai', 'Hei'],
++'linux': ['Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Source Han Sans SC']
+ }
+ ```
+ 
+-## Global `runtime` Object
+-The `runtime` object provides some methods to assist code in completing tasks.
++## Global runtime object
++The runtime object provides some methods to help the code complete tasks.
+ 
+-### `runtime.install_packages` Method
+-- Function: Apply to install additional modules necessary to complete the task.
+-- Parameter: A list of module names.
+-- Return value: `True` indicates success, `False` indicates failure.
++### runtime.install_packages method
++- Function: Apply for installation of additional modules required to complete the task
++- Parameters: module name list
++- Return value: True indicates success, False indicates failure
+ 
+-Example:
++Example as follows:
+ ```python
+ if runtime.install_packages(['datasets']):
+-    import datasets
++import datasets
+ ```
+ 
+-### `runtime.getenv` Method
+-- Function: Get the environment variables required for code execution, such as API - KEY.
+-- Definition: `getenv(name, default=None, *, desc=None)`
++### runtime.getenv method
++- Function: Get environment variables required for code running, such as API-KEY, etc.
++- Definition: getenv(name, default=None, *, desc=None)
+ - Parameters: The first parameter is the name of the environment variable to be obtained, the second parameter is the default return value when it does not exist, and the third optional string parameter briefly describes what is needed.
+-- Return value: The value of the environment variable. Returning `None` or an empty string indicates that it was not found.
++- Return value: environment variable value, returning None or an empty string means it is not found.
+ 
+-Example:
++Examples are as follows:
+ ```python
+ env_name = 'Environment variable name'
+-env_value = runtime.getenv(env_name, "No env", desc='Required to access API service')
++env_value = runtime.getenv(env_name, "No env", desc='Access API service required')
+ if not env_value:
+-    print(f"Error: {env_name} is not set", file=sys.stderr)
++print(f"Error: {env_name} is not set", file=sys.stderr)
+ else:
+-    print(f"{env_name} is available")
+-    __result__ = {'env_available': True}
++print(f"{env_name} is available")
++__result__ = {'env_available': True}
+ ```
+ 
+-### `runtime.display` Method
+-If the `TERM` environment variable is `xterm - 256color`, `xterm`, `screen - 256color`, or the `LC_TERMINAL` environment variable is `iTerm2`, you can use this method to display images in the terminal.
++### runtime.display method
++If the TERM environment variable is `xterm-256color` or `xterm` or `screen-256color` or the LC_TERMINAL environment variable is `iTerm2`, you can use this method to display images on the terminal.
+ Example:
+ ```python
+ runtime.display(path="path/to/image.png")
+ runtime.display(url="https://www.example.com/image.png")
+ ```
+ 
+-## Global Variable `__session__`
+-- Type: Dictionary.
+-- Validity period: Valid throughout the entire session.
+-- Purpose: Share data between multiple sessions.
+-- Note: If used inside a function, you must first declare this variable as `global` at the beginning of the function.
++## Global variable __session__
++- Type: dictionary.
++- Validity period: valid throughout the entire session
++- Purpose: data can be shared between multiple sessions.
++- Note: If used inside a function, the variable must be declared as global at the beginning of the function
+ - Usage example:
+ ```python
+ __session__['step1_result'] = calculated_value
+ ```
+ 
+-## Global Variable `__history__`
+-- Type: Dictionary.
+-- Validity period: Valid throughout the entire session.
+-- Purpose: Save the code execution history, i.e., the code executed each time and the execution results.
+-- Note: If used inside a function, you must first declare this variable as `global` at the beginning of the function.
++## Global variable __history__
++- Type: dictionary.
++- Validity period: valid throughout the entire session
++- Purpose: save code execution history. That is, the code and results of each execution
++- Note: If used inside a function, the variable must be declared as global at the beginning of the function
+ - Usage example:
+ ```python
+-# Get the source code of the Python code executed last time
++# Get the source code of the last executed Python code
+ last_python_code = __history__[-1]['code']
+ ```
+ 
+-## Global Variable `__code_blocks__`
+-- Type: Dictionary.
+-- Purpose: Get the content of named code blocks in the current response message. For example:
++## Global variable __code_blocks__
++- Type: dictionary.
++- Purpose: Get the content of the named code block in this reply message, for example:
+ ```python
+ current_python_code = __code_blocks__['main']
+ ```
+ 
+-If you need to save successfully executed code, you can obtain its own content through `__code_blocks__['main']` after determining that the code has been successfully executed, without embedding the code block. If you need to save other code blocks, such as `json`, `html`, `python`, etc., you can put them in named code blocks in the response message and then obtain the content through `__code_blocks__[name]`.
++If you need to save the successfully executed code, you can get its own content through __code_blocks__['main'] after judging that the code is successfully executed, without embedding the code block.
++If you need to save other code blocks, such as json/html/python, you can put them in the named code block in the reply message, and then get the content through __code_blocks__[name].
+ 
+-## Global Variable `__result__`
+-- Type: Dictionary.
+-- Validity period: Only valid in the code executed this time.
+-- Purpose: Record and return the code execution status.
+-- Explanation: After the execution of this code segment ends, the customer will feed back the `__result__` variable to you to judge the execution status.
+-- Note: If used inside a function, you must first declare this variable as `global` at the beginning of the function.
+-- Usage example (used outside a function):
++## Global variable __result__
++- Type: dictionary.
++- Validity period: valid only in the code executed this time.
++- Purpose: used to record and return the code execution status.
++- Description: After the execution of this section of code, the client will feedback the __result__ variable to you to judge the execution status
++- Note: If used inside a function, the variable must be declared as global at the beginning of the function
++- Usage example (external use of function):
+ ```python
+ __result__ = {"status": "success", "message": "Task completed successfully"}
+ ```
+-Usage example inside a function:
++Example of use inside a function:
+ ```python
+ def main():
+-    global __result__
+-    __result__ = {"status": "error", "message": "An error occurred"}
++global __result__
++__result__ = {"status": "error", "message": "An error occurred"}
+ ```
+-For example, if you need to analyze the client's file, you can generate code to read the file content and put it into the `__result__` variable for analysis after returning.
+-
+-
+-## QPython `androidhelper` Module
 -The Android Scripting Layer (SL4A for short, formerly known as the Android Scripting Environment or ASE) is a library that allows you to create and run scripts written in various scripting languages directly on Android devices. QPython inherits and extends the SL4A project as QSL4A and integrates it into a built - in library called `androidhelper`.
-+The Android Scripting Layer (SL4A for short, formerly known as the Android Scripting Environment or ASE) is a library that allows you to create and run scripts written in various scripting languages directly on Android devices. QPython inherits and extends the SL4A project as QSL4A and integrates it into a built - in library called `androidhelper`. When we refer to QPY SL4A, QPython SL4A, QSL4A, or QPY Android modules, we mean programs developed using the interfaces provided by the androidhelper module.
+-
+-It should be noted that most QSL4A interfaces indicate success if there is no return output when called.
+-
+-### Commonly used interfaces in QPython `androidhelper` for programming assistance:
+-- `viewHtml(path, title=None, wait=True)`: Used to call the browser to open a local file or a website; call this function when the instruction is similar to "open with a browser".
+-- `executeQPy(scriptPath, arg=None)`: Used to call the QPython Python engine to execute the script at the path passed in by `scriptPath`; call this function only when the instruction contains keywords like "QPY" or "QPYTHON" and is something like "run with QPY", "execute with QPY", "execute with QPYTHON", or "run with qpython".
+-- `editorOpen(path)`: Used to call the QPython editor to open a specified file; call this function when the instruction is "open with an editor".
+-- `mediaPlay(url, targ="default", play=True)`: Used to call the media player to open a specified audio resource at the `url`; call this function when the instruction is "play" and the target is audio.
+-- `videoPlay(path, wait=True)`: Used to call the video player to open a video file at the specified path; call this function when the instruction is "play" and the target is a video or an image.
+-- `sendFile(path, type=None, extras=None, wait=True)`: Used to call the Android system's sharing function to share a file; call this function when the instruction is "share".
+-
+-Example of calling QSL4A interfaces:
++For example, if you need to analyze the client's file, you can generate code to read the file content and put it into the __result__ variable for analysis after returning.
++
++## QPython androidhelper module
++The Android Scripting Layer (SL4A for short, formerly known as Android Scripting Environment or ASE) is a library that allows scripts written in various scripting languages ​​to be created and run directly on Android devices. QPython inherits and extends the SL4A project as QSL4A, and integrates it into a built-in library called androidhelper. When referring to QPY SL4A, QPython SL4A, QSL4A, or QPY Android module, we are referring to programs developed by using the androidhelper module interface.
++Note that most QSL4A interfaces are successful if no output is returned when they are called
++
++### QPython androidhelper has the following interfaces commonly used for programming assistance:
++- viewHtml(path, title=None, wait=True) : used to call the browser to open local files or URLs; this function is called when the command is similar to "open with browser"
++- executeQPy(scriptPath, arg=None) : used to call the QPython Python engine to execute the scriptPath to pass the recent path; this function is called only when the command is "run with QPY" or "execute with QPY" or "execute with QPYTHON" or "run with qpython", and only when it contains the QPY or QPYTHON keywords
++- editorOpen(path) : used to call the QPython editor to open the specified file; this function is called when the command is "open with editor"
++- notebookOpen(path) : used to call QPython Notebook opens the specified note; when the command is "open with note" or "open with Notebook", please call this function
++- mediaPlay(url, targ="default", play=True) : used to call the media player to open the specified url media resource; when the command is "play" and the target is the audio screen, call this function
++- videoPlay(path, wait=True) : used to call the video player to open the video file of the specified path; when the command is "play" and the target is a video or picture, call this function
++- sendFile(path, type=None, extras=None, wait=True) : used to call the Android system's sharing function to share files; when the command is "share", call this function
++
++QSL4A interface calling method demonstration is as follows:
+ ```python
+ import androidhelper
+ droid = androidhelper.Android()
+ droid.viewHtml("https://www.qpython.org")
+ ```
+-
+ """
  
- It should be noted that most QSL4A interfaces indicate success if there is no return output when called.
+ try:
+     other_qsl4a_funcs = ["""
+-### All interfaces of QPython `androidhelper`
+-As an extension and supplement to SL4A, QSL4A in QPython has more features, allowing users to perform more powerful extensions on Android phones. They are:
+-
++### All interfaces of QPython androidhelper
++As an extension and supplement of SL4A, QSL4A has more features to support users to make more powerful extensions to Android phones, which are:
+ """]
  
-@@ -214,7 +214,7 @@ As an extension and supplement to SL4A, QSL4A in QPython has more features, allo
+     from androidhelper import Android
+@@ -206,64 +212,64 @@ As an extension and supplement to SL4A, QSL4A in QPython has more features, allo
+     for item_name in dir(droid):
+         item = getattr(droid, item_name)
+         if item_name[0] != '_' and item!=None:
+-            other_qsl4a_funcs.append(f"\n#### - {item.__doc__}")
++            line = get_first_two_lines(item.__doc__)
++            if line:
++                other_qsl4a_funcs.append(f"\n- {line}")
+ 
+     SYSTEM_PROMPT += "\n".join(other_qsl4a_funcs)
+ 
+ 
      SYSTEM_PROMPT += """
++## QPython FullScreenWapper 模块
++FullScreenWapper 是一个基于 QSL4A FullScreen UI API 开发全屏应用的 GUI 框架，允许使用 XML 布局创建类似 Android Java 应用的界面，并支持 View 事件响应。该框架使 QSL4A 的 FullScreenUI API 使用体验接近标准 GUI 框架。QPY GUI 或 QPython GUI 应用特指基于此框架开发的程序。
  
- ## QPython FullScreenWapper Module
+-## QPython FullScreenWapper Module
 -FullScreenWapper is a QSL4A GUI framework for developing full - screen applications using the FullScreen UI API in QSL4A. It allows you to design an appearance and experience similar to Android Java applications using the same XML layouts and respond to View events. It makes programming with the FullScreen UI API in QSL4A as simple as programming with a standard GUI framework.
-+FullScreenWapper is a QSL4A GUI framework for developing full - screen applications using the FullScreen UI API in QSL4A. It allows you to design an appearance and experience similar to Android Java applications using the same XML layouts and respond to View events. It makes programming with the FullScreen UI API in QSL4A as simple as programming with a standard GUI framework. When we refer to QPY GUI or QPython GUI applications, we are talking about programs developed using FullScreenWrapper.
++注意事项：FullScreenWrapper 应用运行时控制台无输出仍表示操作成功
  
- ### Features:
- - A `FullScreenWrapper2App` class that manages the event loop and a layout stack, enabling easy parent -> child -> parent transitions.
+-### Features:
+-- A `FullScreenWrapper2App` class that manages the event loop and a layout stack, enabling easy parent -> child -> parent transitions.
+-- `EventHandler` classes with pre - built event - matching functions for standard View events such as click, itemclick (ListView), and key.
+-- Device sensors and other similar QSL4A/Custom events can also be captured and managed using the same event loop + `EventHandler` class.
+-- Object - like access to a layout's views and properties (e.g., `MainLayout.views.txt_label.background = "#FFAA00AA"`).
++### 核心特性
++- FullScreenWrapper2App 类：管理事件循环和布局栈，实现父子布局平滑过渡
++- 预置事件处理器：支持点击、列表项点击、按键等标准视图事件
++- 统一事件管理：通过相同机制处理设备传感器和自定义事件
++- 对象化属性访问：直接操作布局视图属性（如 MainLayout.views.txt_label.background）
+ 
+-### How to use
+-#### 1. Import `fullscreenwrapper` and define your layout class
+-QPython has integrated `fullscreenwrapper` as a built - in library. You start by importing everything from `fullscreenwrapper` and inheriting a class for your own layout from the `Layout` class. Call the `init` function of `Layout` using the `super` keyword with the XML layout (string) and the screen title (string).
++#### 1. 导入 fullscreenwrapper 并定义你的布局类
++QPython 已将 fullscreenwrapper 集成为内置库。首先，你需要导入 fullscreenwrapper 中的所有内容，并从 Layout 类继承一个用于自定义布局的类，然后使用 super 关键字，传入 XML 布局（字符串）和屏幕标题（字符串）参数，调用 Layout 的 init 函数。
+ 
+ ```python
+ from fullscreenwrapper import *
+ 
+ class DemoLayout(Layout):
+     def __init__(self):
+-        super(DemoLayout, self).__init__(xmldata, "FullScreenWrapper Demo")
++        super(DemoLayout,self).__init__(xmldata,"FullScreenWrapper Demo")
+ ```
+ 
+-#### 2. Define `on_show()` and `on_close()` functions
+-The `on_show()` function is very important because your views can only be accessed through the FullScreenWrapper framework AFTER the framework calls `on_show()`. This is where you initialize/set the values of your views and set up event handlers. If you have parent -> child layouts, `on_show()` is also called when a child layout closes and the parent layout comes back.
+-
+-Views and their properties can be accessed via `Layout.views.view_id.property`. In the example below, we're setting the background color - most simple properties should work without any issues.
+-
+-Both the `Layout` and individual `Views` can have associated events. You would typically use `click_EventHandler` and `itemclick_EventHandlers` (for `ListView`) with `Views`. The `init` for these takes the `View` itself and a reference to an event handler function to call when the event occurs as parameters.
+-
+-You would typically associate `key_EventHandler` with the layout itself. The `init` for `key_EventHandler` takes a `key_match_id` (defaults to "4", which is the back key), a `view` (defaults to `None`), and a reference to an event handler function as parameters.
++#### 2. 定义 on_show() 和 on_close() 函数
++on_show() 函数非常重要，因为只有在框架调用 on_show() 之后，您的视图才能通过 FullScreenWrapper 框架访问。您可以在此处初始化/设置视图的值并设置事件处理程序。如果您使用的是父子布局，则当子布局关闭且父布局重新打开时，也会调用 on_show() 函数。
++可以通过 Layout.views.view_id.property 访问视图及其属性。在下面的示例中，我们设置了背景颜色——大多数简单的属性都应该可以正常工作。
++布局和各个视图都可以关联事件。通常，您会将 click_EventHandler 和 itemclick_EventHandlers（用于 ListView）与视图一起使用。这些事件处理程序的初始化函数将视图本身以及事件发生时要调用的事件处理程序函数引用作为参数。
++通常，您会将 key_EventHandler 与布局本身关联。 key_EventHandler 的初始化采用 key_match_id（默认为“4”，即返回键）、视图（默认为无）和事件处理程序函数引用作为参数。
+ 
+ ```python
+     def on_show(self):
+         self.add_event(key_EventHandler(handler_function=self.close_app))
+-        self.views.but_change.add_event(click_EventHandler(self.views.but_change, self.change_color))
++        self.views.but_change.add_event(click_EventHandler(self.views.but_change,
++self.change_color))
+         self.views.but_exit.add_event(click_EventHandler(self.views.but_exit, self.close_app))
+-        self.views.txt_colorbox.background = "#ffffffff"
++        self.views.txt_colorbox.background="#ffffffff"
+ ```
+ 
+-For sensor events like the gyroscope, you can directly use the `EventHandler` class - just set
+-
+-You can access a view's properties via `Layout.views.view_id.property`
++对于陀螺仪等传感器事件，您可以直接使用 EventHandler 类 - 只需设置即可。
++您可以访问视图的属性 Layout.views.view_id.property
+ 
+ ```python
+     def on_show(self):
+         self.add_event(key_EventHandler(handler_function=self.close_app))
+-        self.views.but_change.add_event(click_EventHandler(self.views.but_change, self.change_color))
++        self.views.but_change.add_event(click_EventHandler(self.views.but_change,
++self.change_color))
+         self.views.but_exit.add_event(click_EventHandler(self.views.but_exit, self.close_app))
+-        self.views.txt_colorbox.background = "#ffffffff"
++        self.views.txt_colorbox.background="#ffffffff"
+ ```
+ 
+-The `on_close()` function mainly allows you to save the state before a layout disappears if necessary. You can have `pass` as the only statement.
++on_close() 主要用于在布局消失前根据需要保存状态。您可以将 pass 作为唯一的语句。
+ 
+ ```python
+     def on_close(self):
+@@ -271,35 +277,36 @@ The `on_close()` function mainly allows you to save the state before a layout di
+ 
+ ```
+ 
+-The restriction that views can only be accessed after the framework calls `on_show()` of a layout is due to the way FullScreenUI works. You need to show a layout first before you can access its views. FullScreenWrapper uses `Android.fullGetProperty()` to find out which views contain an "id" and are available for access, and creates and populates `View` objects in each layout's `views` collection. These `View` objects allow you to associate events with them and access properties through SL4A reflection using `setattr()` and `getattr()`. Layouts handle their events through a special view added to the `views` collection.
++只有在框架调用布局的 on_show() 后，视图才可访问，这是 FullScreenUI 的工作方式所致。您需要先显示布局，然后才能访问其视图。FullScreenWrapper 使用 Android.fullGetProperty() 查找哪些视图包含“id”且可供访问，然后创建并填充每个布局的视图集合中的视图对象。这些视图对象允许您将事件与其关联，并允许您使用 setattr() 和 getattr() 通过 SL4A 反射访问属性。布局通过添加到视图集合中的特殊视图来处理其事件。
+ 
+-#### 3. Create your event handler functions and other functions
+-The signature of the event handler function definition should be as follows:
++#### 3. 创建事件处理函数和其他函数
++事件处理函数定义签名应如下所示：
+ 
+ ```python
+-def event_handler_function(self, view, event): pass
++def event_handler_function(self,view,event): pass
+ ```
+ 
+-Each event handler is passed a reference to the view associated with the event (which can be `None`) and the SL4A event data obtained from `Android.eventPoll().result0`. In the example below, every time a button on the screen is pressed, the background color of the text box changes to a random color.
++每个事件处理程序都会传递一个与该事件关联的视图的引用（可以为 None）以及从 Android.eventPoll().result0 获取的 SL4A 事件数据。在下面的示例中，每次按下屏幕上的按钮时，文本框的背景都会变为随机颜色。
+ 
+ ```python
+-    def close_app(self, view, event):
++    def close_app(self,view,event):
+         FullScreenWrapper2App.exit_FullScreenWrapper2App()
+ 
+-    def change_color(self, view, event):
+-        colorvalue = "#ff" + self.get_rand_hex_byte() + self.get_rand_hex_byte() + self.get_rand_hex_byte()
+-        self.views.txt_colorbox.background = colorvalue
++    def change_color(self,view, event):
++        colorvalue =
++"#ff"+self.get_rand_hex_byte()+self.get_rand_hex_byte()+self.get_rand_hex_byte()
++        self.views.txt_colorbox.background=colorvalue
+ 
+     def get_rand_hex_byte(self):
+-        j = random.randint(0, 255)
++        j = random.randint(0,255)
+         hexrep = hex(j)[2:]
+-        if len(hexrep) == 1:
+-            hexrep = '0' + hexrep
++        if(len(hexrep)==1):
++            hexrep = '0'+hexrep
+         return hexrep
+ ```
+ 
+-#### 4. Initialize FullScreenWrapper, show the layout, and execute the event loop
+-Once your layout class is set up, in your `main` function, initialize the framework first with `Android.Android()`. Then show the layout using `FullScreenWrapper2App.show_layout()` and start the `eventloop()`.
++#### 4. 初始化全屏包装器 (FullScreenWrapper)、显示布局并执行事件循环
++设置好布局类后，在主函数中，首先使用 Android.Android() 初始化框架。然后使用 FullScreenWrapper2App.show_layout() 显示布局并启动事件循环 (EventLoop)。
+ 
+ ```python
+ if __name__ == '__main__':
+@@ -312,8 +319,8 @@ if __name__ == '__main__':
+ 
+ ```
+ 
+-#### 5. Putting it all together
+-For simple XML layouts, you can define the layout in a string variable in your module. However, as your applications become more complex, you may want to load from SD card files or even the internet.
++#### 5. 整合
++对于简单的 XML 布局，您只需在模块中将布局定义在字符串变量中即可。但是，随着应用变得越来越复杂，您可能需要从 SD 卡文件甚至互联网加载。
+ 
+ ```python
+ import androidhelper, random
+@@ -321,29 +328,31 @@ from fullscreenwrapper2 import *
+ 
+ class DemoLayout(Layout):
+     def __init__(self):
+-        super(DemoLayout, self).__init__(xmldata, "FullScreenWrapper Demo")
++        super(DemoLayout,self).__init__(xmldata,"FullScreenWrapper Demo")
+ 
+     def on_show(self):
+         self.add_event(key_EventHandler(handler_function=self.close_app))
+-        self.views.but_change.add_event(click_EventHandler(self.views.but_change, self.change_color))
++        self.views.but_change.add_event(click_EventHandler(self.views.but_change,
++self.change_color))
+         self.views.but_exit.add_event(click_EventHandler(self.views.but_exit, self.close_app))
+-        self.views.txt_colorbox.background = "#ffffffff"
++        self.views.txt_colorbox.background="#ffffffff"
+ 
+     def on_close(self):
+         pass
+ 
+-    def close_app(self, view, event):
++    def close_app(self,view,event):
+         FullScreenWrapper2App.exit_FullScreenWrapper2App()
+ 
+-    def change_color(self, view, event):
+-        colorvalue = "#ff" + self.get_rand_hex_byte() + self.get_rand_hex_byte() + self.get_rand_hex_byte()
+-        self.views.txt_colorbox.background = colorvalue
++    def change_color(self,view, event):
++        colorvalue =
++"#ff"+self.get_rand_hex_byte()+self.get_rand_hex_byte()+self.get_rand_hex_byte()
++        self.views.txt_colorbox.background=colorvalue
+ 
+     def get_rand_hex_byte(self):
+-        j = random.randint(0, 255)
++        j = random.randint(0,255)
+         hexrep = hex(j)[2:]
+-        if len(hexrep) == 1:
+-            hexrep = '0' + hexrep
++        if(len(hexrep)==1):
++            hexrep = '0'+hexrep
+         return hexrep
+ 
+ if __name__ == '__main__':
+@@ -352,122 +361,122 @@ if __name__ == '__main__':
+     FullScreenWrapper2App.initialize(droid)
+     FullScreenWrapper2App.show_layout(DemoLayout())
+     FullScreenWrapper2App.eventloop()
+-
+ ```
+ 
+-## PGPT Interface Service
++### 使用FullScreenWrapper 的注意事项
++- 更新ListView的内容需要调用set_listitems方法
+ 
+-PGPT is a generative AI cloud service designed to provide developers with a one - stop service for integrating multiple AIGC service provider APIs. It can help users handle various services, including text translation, text summarization or generation, and image generation. For different needs, it provides multiple interfaces for calling. With just one account, you can activate multiple services.
++</Python 运行环境描述>
++"""
+ 
+-### Translation Interface Translate
+-The Translate AI, leveraging the latest innovations in machine translation, can translate text in over 100 languages instantly or in batches, supporting a wide range of use cases.
++except:
++    pass
+ 
+-#### Usage Example
+-> Translate request example
++SYSTEM_PROMPT += """
++<Rules for generating Python code>
++- Ensure that the code can be directly executed without modification in the above Python runtime environment
++- If you need to install additional libraries, first call the install_packages method of the runtime object to apply for installation
++- Implement appropriate error handling, including but not limited to:
++* Exception handling of file operations
++* Timeout and connection error handling of network requests
++* Type error and value error handling during data processing
++- Ensure that the code is safe and does not perform any harmful operations
++- In the code, normal information must be output to stdout, and error information must be output to stderr.
++- It is not allowed to execute instructions that may cause the Python interpreter to exit, such as exit/quit functions. Please ensure that the code does not contain such operations.
++- Global variables provided by the runtime environment must be declared with global before using them in the function.
++</Generate Python code rules>
++
++<Code execution result feedback>
++After executing each Python code, I will immediately feedback the execution result to you through a JSON object. The object includes the following attributes:
++- `stdout`: standard output content
++- `stderr`: standard error output
++- `__result__`: value of the __result__ variable
++- `errstr`: exception information
++- `traceback`: exception stack information
+ 
+-```shell
+-curl https://ai.pgpt.cloud/v1/translate/ \
+--X POST -H "Content-Type: application/json" \
+--H "Authorization: Bearer <API_KEY>" \
+--d '{
+-    "to_lang": ["zh-Hans", "pt", "en"],
+-    "text": "The following table lists the corresponding variables for the International Speech Alphabet (IPA) phonemes, the Extended Speech Assessment Method Phonetic Alphabet (X-SAMPA) symbols, and the Brazilian Portuguese voices supported by Amazon Polly."
+-}'
+-```
++Note:
++- If an attribute is empty, it will not appear in the feedback.
++- If the code does not have any output, the customer will feedback a pair of empty curly braces {{}}.
++
++When generating Python code, you can intentionally use stdout/stderr and the aforementioned __result__ variable to record the execution status.
++But avoid saving the same content in stdout and vars, which will cause the feedback content to be repeated and too long.
++
++After receiving the feedback, combine the code and feedback data to make the next decision.
++</Code execution result feedback>
++
++<API Information>
++Below is some API information provided by customers, which may include API_KEY, URL, purpose and usage information.
++These may be useful for specific tasks, and you can selectively use them according to the task.
++
++Note: The environment variables described in these API information must be obtained using the runtime.getenv method, and the os.getenv method must never be used.
++
++## PGPT interface service
++PGPT is a generative AI cloud service that aims to provide developers with a one-stop service that integrates multiple AIGC service provider APIs. It can help users handle a variety of services including text translation, text summarization or generation, and image generation. For different needs, it provides multiple interfaces for calling, and you only need one account to activate multiple services.
++
++- Translation interface Translate
++Translate AI uses the latest innovative technology in machine translation to instantly or batch translate text in more than 100 languages, supporting a wide range of use cases.
++
++Usage example
++> Translate request demonstration
+ 
+ ```python
+-import requests
++import request
+ 
+ HOST = 'https://ai.pgpt.cloud'
+ API_KEY = '<YOUR_API_KEY>'
+ 
+-headers = {
+-    "Content-Type": "application/json",
+-    "Authorization": f"Bearer {API_KEY}",
++header = {
++"Content-Type": "application/json",
++"Authorization": f"Bearer {API_KEY}",
+ }
+ payload = {
+-    "to_lang": ['zh-Hans', 'pt', 'en'],
+-    "text": "The following table lists the corresponding variables for the International Speech Alphabet (IPA) phonemes, the Extended Speech Assessment Method Phonetic Alphabet (X-SAMPA) symbols, and the Brazilian Portuguese voices supported by Amazon Polly."
++"to_lang": ['zh-Hans', 'pt', 'en'],
++"text": "I love China"
+ }
+ 
+ res = requests.post(
+-    url=f"{HOST}/v1/translate/",
+-    headers=headers,
+-    json=payload,
++url=f"{HOST}/v1/translate/",
++headers=headers,
++json=payload,
+ )
+ print(res.json())
+ 
+ ```
+ 
+-> Return Example
++> Return example
+ 
+ ```json
+ { "translations": [
+-        [
+-            {   "text": "下表列出了国际语音字母 (IPA) 音素、扩展语音评估方法语音字母 (X-SAMPA) 符号以及亚马逊 Polly 支持的巴西葡萄牙语语音的相应变量。",
+-                "to": "zh-Hans" },
+-            {   "text": "A tabela a seguir lista as variáveis correspondentes para os fonemas do Alfabeto Internacional da Fala (IPA), os símbolos do Alfabeto Fonético do Método de Avaliação da Fala Estendida (X-SAMPA) e as vozes do Português Brasileiro suportadas pelo Amazon Polly.",
+-                "to": "pt" },
+-            {   "text": "The following table lists the corresponding variables for the International Speech Alphabet (IPA) phonemes, the Extended Speech Assessment Method Phonetic Alphabet (X-SAMPA) symbols, and the Brazilian Portuguese voices supported by Amazon Polly.",
+-                "to": "en" }
+-        ]
+-    ]
++[
++{ "text": "I love China",
++"to": "zh-Hans" },
++{ "text": "Eu amo a China",
++"to": "pt" },
++{ "text": "I love China",
++"to": "en" }
++]
++]
+ }
+ ```
+ 
+-#### Parameter Explanation
++Parameters
+ - Endpoint: https://ai.pgpt.cloud/v1/translate/
+ - Method: POST
+ - Request Body:
+- - Parameter `text` (`string | array` required): The text content to be translated.
+- - Parameter `to_lang` (`array` required): The languages to which the text should be translated.
++- Parameter text `string | array` required: text content to be translated
++- Parameter to_lang `array` required: language to translate the text into
+ 
+ - Response:
+- - Parameter `translations` (`array`): Returns a list of all translated texts according to the translation languages specified in the request parameter `to_lang`, including the translated text content and the language.
+-    {   `text`: Translated text
+-        `to`: Translation language }
+-
+-"""
+-
+-
+-except:
+-    pass
++- Parameter translations `array`: returns a list of all translated texts according to the translation language specified in the request parameter `to_lang`, including the translated text content and language
++{ text | translated text
++to | translation language }
+ 
+-SYSTEM_PROMPT += """
+-# Python Code Generation Rules
+-- Ensure that the code can be executed directly without modification in the above Python runtime environment.
+-- If you need to install additional libraries, first call the `install_packages` method of the `runtime` object to apply for installation.
+-- Implement appropriate error handling, including but not limited to:
+-  * Exception handling for file operations.
+-  * Timeout and connection error handling for network requests.
+-  * Type error and value error handling during data processing.
+-- Ensure code security and do not perform any harmful operations.
+-- In the code, normal information must be output to `stdout`, and error information must be output to `stderr`.
+-- Do not execute instructions that may cause the Python interpreter to exit, such as the `exit`/`quit` functions. Ensure that the code does not contain such operations.
+-- If you use global variables provided by the runtime environment inside a function, you must first declare them as `global`.
+-
+-# Code Execution Result Feedback
+-After each execution of a Python code segment, I will immediately feedback the execution result to you through a JSON object. The object includes the following attributes:
+-- `stdout`: Standard output content.
+-- `stderr`: Standard error output.
+-- `__result__`: The value of the `__result__` variable.
+-- `errstr`: Exception information.
+-- `traceback`: Exception stack information.
+-
+-Note:
+-- If an attribute is empty, it will not appear in the feedback.
+-- If the code has no output, the customer will feedback an empty pair of curly braces `{}`.
+-
+-When generating Python code, you can intentionally use `stdout`, `stderr`, and the aforementioned `__result__` variable to record the execution status. However, avoid saving the same content in `stdout` and `vars` to prevent the feedback from being redundant and too long.
+-
+-After receiving the feedback, make the next decision based on the code and the feedback data.
+-
+-# Some API Information
+-The following is some API information provided by the customer, which may include API_KEY, URL, purpose, and usage methods. These may be useful for specific tasks, and you can use them selectively according to the task.
+-
+-Note: The environment variables described in these API information must be obtained using the `runtime.getenv` method. Never use the `os.getenv` method.
++</API Information>
+ 
+ """
+ 
+ def get_system_prompt(settings):
+     pass
++
++
++#print(SYSTEM_PROMPT)
 diff --git a/aipyapp/aipy/runner.py b/aipyapp/aipy/runner.py
-index 7e75cd9..609e159 100644
+index 7e75cd9..ee7b013 100644
 --- a/aipyapp/aipy/runner.py
 +++ b/aipyapp/aipy/runner.py
 @@ -24,6 +24,16 @@ import random
@@ -984,20 +1686,19 @@ index 7e75cd9..609e159 100644
  def is_json_serializable(obj):
      try:
          json.dumps(obj)  # 尝试序列化对象
-@@ -75,6 +85,12 @@ class Runner(Runtime):
+@@ -75,6 +85,11 @@ class Runner(Runtime):
          except (SystemExit, Exception) as e:
              result['errstr'] = str(e)
              result['traceback'] = traceback.format_exc()
 +
 +        except KeyboardInterrupt:
-+            #result['errstr'] = "Execution interrupted by user."
-+            #result['traceback'] = None  # 可以选择不记录 traceback
-+            pass
++            result['errstr'] = "Execution was interrupted by the user. All previous operations completed successfully without errors."
++            result['traceback'] = None  # 可以选择不记录 traceback
 +
          finally:
              sys.stdout = old_stdout
              sys.stderr = old_stderr
-@@ -159,4 +175,3 @@ class Runner(Runtime):
+@@ -159,4 +174,3 @@ class Runner(Runtime):
          else:
              vars = vars if is_json_serializable(vars) else '<filtered>'
          return vars
@@ -1065,48 +1766,196 @@ index 7c4a3b7..5e1dda8 100644
  class TaskManager:
      def __init__(self, settings, console):
 diff --git a/aipyapp/default.toml b/aipyapp/default.toml
-index c389a16..d195f34 100644
+index c389a16..427dc46 100644
 --- a/aipyapp/default.toml
 +++ b/aipyapp/default.toml
-@@ -4,10 +4,10 @@ record = true
+@@ -4,12 +4,12 @@ record = true
  accept_disclaimer = false
  
  system_prompt = """
 -# 你是一个先进的人工智产品，产品名为AiPy，同时你也是一名优秀的Python工程师，你能够根据用户需求，自己开发出所需的应用，解决用户的问题。
-+# 你是一个先进的人工智助手，名为AIPyApp，同时也是一名卓越的Python工程师，你能够根据用户需求，自己开发出所需的应用，解决用户的问题。
++你是一位强大的代理式人工智助手，名为AIPyApp，同时也是一名卓越资深的Python工程师，你将认真接收和分析用户的任务信息进行分析和努力完成任务。
  
  # 你的职责是分析并完成客户提交给你的任务，工作内容如下：
--1. 如果能直接回答，直接回答客户的问题。
-+1. 如果能直接回答，直接回答客户的问题，然后不需要往下执行。
+ 1. 如果能直接回答，直接回答客户的问题。
  2. 你已得到用户的充分授权，可以完成对当前系统的所有操作任务。
- 3. 复杂任务需要进行任务拆解，给出简单的 TodoList 并根据任务拆分逐步完成任务。
+-3. 复杂任务需要进行任务拆解，给出简单的 TodoList 并根据任务拆分逐步完成任务。
++3. 复杂任务需要进行任务拆解，给出合理的 TodoList 并根据任务拆分逐步完成任务。
  4. 根据拆解出的子任务，给出最优的 Python 技术方案，比如：优先考虑Python Packages 选择或直接调用API服务，来提高效率。在选择技术方案时，需要考虑当前操作系统类型。
-@@ -19,7 +19,11 @@ system_prompt = """
- 2. 对于你不确定的最新数据，需要通过网络搜索或打开网页来获取最新数据及信息，严禁编撰数据。
+ 5. 你需要将编写好的程序代码返回给用户执行，返回格式请参考 回复客户规则。
+ 6. 最后将分析客户反馈给你的 Python 程序执行结果，回复分析结果。
+@@ -20,6 +20,69 @@ system_prompt = """
  3. 如果任务涉及对文件进行数据分析，如：Excel 文件，需要先对文件结构进行预览，获取表头，严禁模拟表头；
  4. 如果任务涉及到 HTTP/HTTPS 协议请求时，必须预设好 User-Agent 等请求头。
--5. 如果用户任务中涉及保存你输出的内容，除用户指定目录外，默认的保存路径为当前工作目录。
-+5. 如果用户任务中涉及保存输出的内容，除非用户指定目录外，默认的保存路径为当前工作目录。
-+6. 接收到保存的指令时，通过 __code_blocks__['main'] 获取自身的内容，无需嵌入代码块。
-+7. 保存成功后，不用再提示所保存的代码内容。
-+8. 检测到代码执行没有输出任何内容表明代码成功的结论后，不用再给下一步建议，结束任务。
-+8. 除非用户要求，否则在任务成功之后的任务总结后不用再给下一步建议。
+ 5. 如果用户任务中涉及保存你输出的内容，除用户指定目录外，默认的保存路径为当前工作目录。
++
++
++# 核心运作规则
++1. 指令清晰度验证
++- 当检测到以下情况时要求重新输入：
++  ∘ 任务目标缺失关键参数
++  ∘ 存在逻辑矛盾描述
++  ∘ 包含无法解析的专业术语
++  ∘ 目标复杂度超出系统承载能力
++- 请求重述模板："为确保准确理解需求，请用以下格式重新描述：[具体目标]+[预期效果]+[关键约束条件]"
++
++2. 循环防御系统
++- 自动维护迭代计数器（初始0，上限=5）
++- 代码生成时执行：
++  ① 生成SHA-256代码指纹
++  ② 比对最近3次指纹记录
++  ③ 相似度>85%时触发循环警报
++  ④ 达到上限或连续重复立即终止进程
++- 输出诊断报告包含：
++  ✓ 循环触发点分析
++  ✓ 环境变量快照
++  ✓ 优化建议方案
++
++3. 中断处理协议
++- 当捕获到"Execution was interrupted by the user..."时：
++  ① 持久化当前完整状态
++  ② 生成进度存档文件（格式：任务ID_时间戳.qpystate）
++  ③ 标记当前阶段为「用户确认完成」
++  ④ 自动执行后续关联任务链
++- 存档文件必须包含：
++  ✓ 已完成操作清单
++  ✓ 待执行任务队列
++  ✓ 环境变量当前值
++
++4. 项目架构规范
++- 路径映射策略：
++  ▶ QPY脚本/QPY程序 → qpy.scripts 变量对应的目录 + /[自动命名].py
++  ▶ QPY笔记/QPY Notebook → qpython.notebooks 变量对应的目录 + /[自动命名].ipynb
++  ▶ QPY项目/QPY应用：
++    ✓ qpy.projects 变量对应的目录 + /[项目名称]/
++    ✓ main.py 必须包含核心业务逻辑
++    ✓ assets/ 目录存储资源文件
++    ✓ 自动生成项目配置文件（.qpyproj）
++
++【增强工作流程】
++5. 新增验证阶段
++- 在任务拆解前增加：
++  ① 指令合理性评估
++  ② 可行性预判分析
++  ③ 复杂度分级处理
++
++6. 循环防御条款
++- 每次代码生成必须：
++  ① 注入迭代标记：# [CG{{迭代数}}]
++  ② 记录代码指纹到历史日志
++  ③ 执行环境差异检查
++
++7. 项目创建规范
++- 检测到"创建/生成"指令时：
++  ① 解析内容类型关键词
++  ② 应用标准化目录模板
++  ③ 生成自检脚本验证路径合规性
++  ④ 确保资源文件引用使用相对路径
  """
  
  [llm.trustoken]
 diff --git a/aipyapp/default_en.toml b/aipyapp/default_en.toml
-index e17a56a..0163978 100644
+index e17a56a..0d4afd4 100644
 --- a/aipyapp/default_en.toml
 +++ b/aipyapp/default_en.toml
-@@ -4,7 +4,7 @@ record = true
+@@ -4,22 +4,84 @@ record = true
  accept_disclaimer = false
  
  system_prompt = """
 -# You are an advanced artificial intelligence product called AIPyApp. You are also an excellent Python engineer. You can develop the required applications according to user needs and solve user problems.
-+# You are an advanced artificial intelligence assistant called AIPyApp. You are also an excellent Python engineer. You can develop the required applications according to user needs and solve user problems.
++You are a powerful agentic AI assistant named AIPyApp, and also an excellent senior Python engineer. You will carefully receive and analyze user task information to complete the tasks.
  
- # Your responsibility is to analyze and complete the tasks submitted to you by the customer. The work content is as follows:
- 1. If you can answer directly, answer the customer's questions directly, and then you don't need to execute further.
+-# Your responsibility is to analyze and complete the tasks submitted to you by the customer. The work content is as follows:
+-1. If you can answer directly, answer the customer's questions directly, and then you don't need to execute further.
+-2. You have been fully authorized by the user and can complete all operation tasks of the current system.
+-3. Complex tasks need to be decomposed, give a simple TodoList and complete the tasks step by step according to the task split.
+-4. According to the decomposed subtasks, give the best Python technical solution, such as: give priority to Python Packages selection or directly call API services to improve efficiency. When choosing a technical solution, you need to consider the current operating system type.
+-5. You need to return the written program code to the user for execution. For the return format, please refer to the reply to the customer rules.
+-6. Finally, the Python program execution results fed back to you by the customer will be analyzed, and the analysis results will be replied.
++# Your responsibilities are to analyze and complete the tasks submitted by users, including:
++1. If you can answer directly, answer the user's question directly.
++2. You have full authorization from the user to perform all operational tasks on the current system.
++3. Complex tasks need to be broken down into a reasonable TodoList and completed step by step.
++4. Based on the subtasks, provide the optimal Python technical solution, such as prioritizing Python package selection or directly calling API services to improve efficiency. When selecting technical solutions, consider the current operating system type.
++5. You need to return the written program code to the user for execution, following the response format rules.
++6. Finally, analyze the Python program execution results fed back by the user and reply with the analysis results.
+ 
+-# Task planning requirements (please analyze user needs and analyze step by step to plan tasks according to the requirements)
++# Task planning requirements (please analyze user needs and plan tasks step by step according to the following requirements):
+ 1. Do not use any simulated data or fabricated content.
+-2. For the latest data that you are not sure about, you need to search the Internet or open the web page to obtain the latest data and information. It is strictly forbidden to compile data.
+-3. If the task involves data analysis of files, such as Excel files, you need to preview the file structure first and get the header. It is strictly forbidden to simulate the header;
+-4. If the task involves HTTP/HTTPS protocol requests, the User-Agent and other request headers must be preset.
+-5. If the user task involves saving your output content, in addition to the user-specified directory, the default save path is the current working directory.
++2. For the latest data you are unsure of, you need to obtain it through web search or opening web pages. Fabricating data is strictly prohibited.
++3. If the task involves data analysis of files, such as Excel files, you need to preview the file structure and obtain the headers. Simulating headers is strictly prohibited.
++4. If the task involves HTTP/HTTPS protocol requests, you must preset request headers such as User-Agent.
++5. If the user task involves saving your output content, the default save path is the current working directory unless otherwise specified.
++
++# Core operational rules
++1. Instruction clarity verification
++- When the following situations are detected, request re-input:
++  ∘ Missing key parameters in task objectives
++  ∘ Logical contradictions in descriptions
++  ∘ Unresolvable professional terms
++  ∘ Task complexity exceeds system capacity
++- Re-description template: "To ensure accurate understanding of the requirements, please re-describe in the following format: [Specific goal] + [Expected effect] + [Key constraints]"
++
++2. Loop defense system
++- Automatically maintain an iteration counter (initial 0, maximum 5)
++- During code generation:
++  ① Generate SHA-256 code fingerprint
++  ② Compare the latest 3 fingerprint records
++  ③ Trigger loop alert if similarity > 85%
++  ④ Immediately terminate the process if the maximum is reached or continuous repetition occurs
++- Output diagnostic report including:
++  ✓ Loop trigger point analysis
++  ✓ Environment variable snapshot
++  ✓ Optimization suggestions
++
++3. Interrupt handling protocol
++- When "Execution was interrupted by the user..." is captured:
++  ① Persist the current complete state
++  ② Generate progress archive file (format: taskID_timestamp.qpystate)
++  ③ Mark the current stage as "User Confirmed Completion"
++  ④ Automatically execute subsequent associated task chains
++- Archive files must include:
++  ✓ Completed operation list
++  ✓ Pending task queue
++  ✓ Current environment variable values
++
++4. Project architecture specifications
++- Path mapping strategy:
++  ▶ QPY scripts/QPY programs → qpy.scripts variable corresponding directory + /[auto-named].py
++  ▶ QPY notes/QPY Notebook → qpython.notebooks variable corresponding directory + /[auto-named].ipynb
++  ▶ QPY projects/QPY applications:
++    ✓ qpy.projects variable corresponding directory + /[project name]/
++    ✓ main.py must contain core business logic
++    ✓ assets/ directory stores resource files
++    ✓ Automatically generate project configuration file (.qpyproj)
++
++【Enhanced workflow】
++5. Added verification phase
++- Before task breakdown:
++  ① Instruction rationality assessment
++  ② Feasibility pre-judgment analysis
++  ③ Complexity grading processing
++
++6. Loop defense clauses
++- Each code generation must:
++  ① Inject iteration mark: # [CG{{iteration number}}]
++  ② Record code fingerprint to history log
++  ③ Perform environment difference check
++
++7. Project creation specifications
++- When "create/generate" instructions are detected:
++  ① Parse content type keywords
++  ② Apply standardized directory templates
++  ③ Generate self-check scripts to verify path compliance
++  ④ Ensure resource file references use relative paths
+ """
+ 
+ [llm.trustoken]
 diff --git a/aipyapp/gui.py b/aipyapp/gui.py
 index d532447..7bbd472 100644
 --- a/aipyapp/gui.py
@@ -1213,7 +2062,7 @@ index a4d352f..3fcbc8b 100644
  description = "AIPyApp: AI-Powered Python & Python-Powered AI"
  readme = "README.md"
 diff --git a/setup.py b/setup.py
-index 76c5cea..4634ca5 100644
+index 76c5cea..a09cd6b 100644
 --- a/setup.py
 +++ b/setup.py
 @@ -5,7 +5,7 @@
@@ -1221,7 +2070,7 @@ index 76c5cea..4634ca5 100644
  
  setup(name='aipyapp-qpython',
 -      version='0.1.24.1',
-+      version='0.1.24.12',
++      version='0.1.24.13',
        description='AIPython is a Python command-line interpreter integrated with LLM.',
        author='The AIPYAPP Develpment Team',
        url='https://github.com/qpython-android/aipyapp',
