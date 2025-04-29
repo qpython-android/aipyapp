@@ -2420,7 +2420,7 @@ index 7c4a3b7..5e1dda8 100644
  class TaskManager:
      def __init__(self, settings, console):
 diff --git a/aipyapp/default.toml b/aipyapp/default.toml
-index c389a16..a15f48c 100644
+index c389a16..60200a2 100644
 --- a/aipyapp/default.toml
 +++ b/aipyapp/default.toml
 @@ -4,26 +4,93 @@ record = true
@@ -2470,7 +2470,7 @@ index c389a16..a15f48c 100644
 +- 复杂度分级处理
 +</子任务拆解检查>
 +
-+6. 根据拆解出的子任务，设计和实现一段最优的 Python 代码实现所有的子任务，设计和实现的代码需要符合<核心运作规则>。
++6. 如果没有 "操作被用户中断" 或者 “操作成功完成" 的反馈时，根据拆解出的子任务，设计和实现一段最优的 Python 代码实现所有的子任务，设计和实现的代码需要符合<核心运作规则>。
 +<核心运作规则>
 +
 +## 基础条件
@@ -2535,10 +2535,10 @@ index c389a16..a15f48c 100644
  enable = false
 -
 diff --git a/aipyapp/default_en.toml b/aipyapp/default_en.toml
-index e17a56a..c2b1239 100644
+index e17a56a..7823b80 100644
 --- a/aipyapp/default_en.toml
 +++ b/aipyapp/default_en.toml
-@@ -4,25 +4,93 @@ record = true
+@@ -4,22 +4,90 @@ record = true
  accept_disclaimer = false
  
  system_prompt = """
@@ -2574,7 +2574,7 @@ index e17a56a..c2b1239 100644
 +
 +2. If you can answer directly, answer the user's question directly and wait for user's reply.
 +
-+3. If there is user feedback indicating that 'the previous operation was successfully executed without errors', then wait for further instructions from the user without proceeding.
++3. If the feedback is "Operation was interrupted by the user" or "Operation completed successfully", interrupt the task and prompt the user to enter the next instruction.
 +
 +4. You have been fully authorized by the user to complete all operational tasks on the system.
 +
@@ -2585,7 +2585,7 @@ index e17a56a..c2b1239 100644
 +- Complexity grading processing
 +</Subtask Decomposition Check>
 +
-+6. According to the decomposed subtasks, design and implement an optimal Python code to complete all subtasks. The designed and implemented code needs to comply with <Core Operation Rules>.
++6. If there is no feedback of "operation interrupted by user" or "operation completed successfully", design and implement an optimal Python code to implement all subtasks according to the decomposed subtasks. The designed and implemented code must comply with the <core operation rules>.
 +<Core Operation Rules>
 +
 +## Basic Conditions
@@ -2645,11 +2645,6 @@ index e17a56a..c2b1239 100644
  """
  
  [llm.trustoken]
- type = "trust"
- api_key = ""
--enable = false
-+enable = false
-\ No newline at end of file
 diff --git a/aipyapp/gui.py b/aipyapp/gui.py
 index d532447..7bbd472 100644
 --- a/aipyapp/gui.py
@@ -2756,7 +2751,7 @@ index a4d352f..3fcbc8b 100644
  description = "AIPyApp: AI-Powered Python & Python-Powered AI"
  readme = "README.md"
 diff --git a/setup.py b/setup.py
-index 76c5cea..2090488 100644
+index 76c5cea..9fd00c4 100644
 --- a/setup.py
 +++ b/setup.py
 @@ -5,7 +5,7 @@
@@ -2764,7 +2759,7 @@ index 76c5cea..2090488 100644
  
  setup(name='aipyapp-qpython',
 -      version='0.1.24.1',
-+      version='0.1.24.17',
++      version='0.1.24.18',
        description='AIPython is a Python command-line interpreter integrated with LLM.',
        author='The AIPYAPP Develpment Team',
        url='https://github.com/qpython-android/aipyapp',
