@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
 from enum import Enum, auto
 from pathlib import Path
 import importlib.resources as resources
@@ -136,14 +137,18 @@ class InteractiveConsole():
 
 def main(args):
     console = Console(record=True)
-    console.print(f"[bold cyan]🚀 Python use - AIPython ({__version__}) [[green]https://aipy.app[/green]]")
-    
-    default_config_path = resources.files(__PACKAGE_NAME__) / "default.toml"
-    conf = ConfigManager(default_config_path, args.config_dir)
+    console.print(f"[bold cyan]🚀 [AIPyApp ({__version__}) on [[green]QPython[/green]][/bold cyan] ")
+    console.print(f"[bold cyan]🌐 github.com/qpython-android/aipyapp[/bold cyan] ")
+
+    path = args.config if args.config else 'aipy.toml'
+    lang = os.getenv('LANG')[:2] if os.getenv('LANG') else "en"
+    conf_file = lang=="zh" and "default.toml" or "default_en.toml"
+    default_config_path = resources.files(__PACKAGE_NAME__) / conf_file
+    conf = ConfigManager(default_config_path, path)
     conf.check_config()
     settings = conf.get_config()
 
-    lang = settings.get('lang')
+    lang = settings.get('lang') or (os.getenv('LANG')[:2] if os.getenv('LANG') else "en")
     if lang: set_lang(lang)
 
     try:

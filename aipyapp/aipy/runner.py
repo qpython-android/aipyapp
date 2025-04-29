@@ -10,6 +10,7 @@ from importlib.util import find_spec
 from term_image.image import from_file, from_url
 
 from . import utils
+from .qpython import qpy_is_webapp, qpy_exec
 from .i18n import T
 from .plugin import event_bus
 from .interface import Runtime
@@ -23,6 +24,16 @@ import time
 import random
 import traceback
 """
+
+import signal
+
+# 定义处理 Ctrl+C 的函数
+def signal_handler(sig, frame):
+    raise KeyboardInterrupt
+
+# 注册信号处理器
+signal.signal(signal.SIGINT, signal_handler)
+
 
 def is_json_serializable(obj):
     try:
@@ -71,10 +82,20 @@ class Runner(Runtime):
         gs['__result__'] = {}
         gs['__code_blocks__'] = blocks
         try:
-            exec(code_str, gs)
+            if qpy_is_webapp(code_str): #如果是QPY的WEB APP
+                qpy_exec(code_str, gs)
+            else: # 否则正常运行
+                exec(code_str, gs)
+
+            if not gs['__result__']:
+                result['message'] = T("The operation completed successfully")
         except (SystemExit, Exception) as e:
             result['errstr'] = str(e)
             result['traceback'] = traceback.format_exc()
+
+        except KeyboardInterrupt:
+            result['message'] = T("Execution was interrupted by the user")
+
         finally:
             sys.stdout = old_stdout
             sys.stderr = old_stderr
@@ -159,4 +180,3 @@ class Runner(Runtime):
         else:
             vars = vars if is_json_serializable(vars) else '<filtered>'
         return vars
-    

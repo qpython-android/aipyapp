@@ -16,8 +16,8 @@ def create_temp_py_file(code, dir):
     return temp_file_path
 
 def qpy_is_webapp(code):
-    # 读取前512个字节
-    header = code[:512]
+    # 读取前128个字节
+    header = code[:128]
     
     # 将字节转换为字符串并检查是否包含特定内容
     if '#qpy:webapp' in header:
@@ -26,7 +26,10 @@ def qpy_is_webapp(code):
         return False
 
 def qpy_exec(code, args):
-    import qpy, androidhelper
-    script = create_temp_py_file(code, qpy.tmp)
-    droid = androidhelper.Android()
-    droid.executeQPy(script)
+    try: # 在QPython环境跑的程序
+        import qpy, androidhelper
+        script = create_temp_py_file(code, qpy.tmp)
+        droid = androidhelper.Android()
+        droid.executeQPy(script)
+    except Exception as e: # 在非QPython环境跑的程序
+        exec(code, gs)

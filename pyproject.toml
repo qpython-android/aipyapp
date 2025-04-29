@@ -1,5 +1,6 @@
 [project]
 name = "aipyapp"
+version = "0.1.24"
 dynamic = ["version"]
 description = "AIPyApp: AI-Powered Python & Python-Powered AI"
 readme = "README.md"

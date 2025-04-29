@@ -59,7 +59,7 @@ class LiveManager:
         self.live = Live(console=console, auto_refresh=False, vertical_overflow='visible', transient=True)
         self.live.__enter__()
         status = self.console.status(f"[dim white]{self.name} {T('thinking')}...", spinner='runner')
-        response_panel = Panel(status, title=self.title, border_style="blue")
+        response_panel = Panel(status, title=f"[blue] 🤖️ {self.title} ")
         self.live.update(response_panel, refresh=True)
         return self
 
@@ -76,10 +76,10 @@ class LiveManager:
         full_response = self.lr.content
         try:
             md = Markdown(full_response)
-            response_panel = Panel(md, title=self.title, border_style="green")
+            response_panel = Panel(md, title=f"[green] 🤖️ {self.title} ")
         except Exception:
             text = Text(full_response)
-            response_panel = Panel(text, title=self.title, border_style="yellow")
+            response_panel = Panel(text, title=f"[yellow] 🤖️ {self.title} ")
         self.live.update(response_panel, refresh=True)
         self.response_panel = response_panel
         self.full_response = full_response
@@ -427,13 +427,18 @@ class AzureOpenAIClient(OpenAIBaseClient):
     def _get_client(self):
         from openai import AzureOpenAI
         return AzureOpenAI(azure_endpoint=self._end_point, api_key=self._api_key, api_version="2024-02-01")
-            
+
+class PGPTAIClient(OpenAIBaseClient):
+    BASE_URL = "https://openai.pgpt.cloud/v1/"
+    MODEL = "auto"
+
 class LLM(object):
     CLIENTS = {
         "openai": OpenAIClient,
         "ollama": OllamaClient,
         "claude": ClaudeClient,
         "gemini": GeminiClient,
+        "pgptai": PGPTAIClient,
         "deepseek": DeepSeekClient,
         'grok': GrokClient,
         'trust': TrustClient,

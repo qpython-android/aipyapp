@@ -56,6 +56,14 @@ MESSAGES = {
             "点击“复制”按钮，复制令牌到剪贴板。在下面进行粘贴。\n"
             "另外，也可以选择退出，然后手动编辑配置文件 {}，配置自己已有的其他大模型令牌"
         ),
+        'pgpttoken_register_instruction': (
+            "当前环境缺少配置文件，需要注册PGPT账号获取试用Token。\n"
+            "请按以下步骤操作：\n"
+            "1. 访问 https://user.pgpt.cloud/ 完成账号注册\n"
+            "2. 登录后创建App（选择Deepseek或者OpenAI）。操作详见文档 https://docs.pgpt.cloud/\n"
+            "3. 获取API Key并复制到剪贴板，然后在此粘贴\n"
+            "您也可以选择退出，然后手动编辑配置文件 {} 来配置已有的其他大模型Token"
+        ),
         'prompt_token_input': "请粘贴令牌并按 Enter 键 (输入 'exit' 退出): ",
         'exit_token_prompt': "退出令牌输入流程。",
         'no_token_detected': "未检测到令牌输入。",
@@ -83,6 +91,10 @@ MESSAGES = {
         'binding_success': "\n绑定流程已成功完成。",
         'binding_failed': "\n绑定流程失败或未完成。",
         'binding_request_failed': "\n绑定请求发起失败。",
+        'The operation completed successfully': "操作成功完成",
+        'Execution was interrupted by the user': "操作被用户中断",
+        'Initial mission': "最初任务",
+        'Code execution result feedback': "代码执行结果反馈",
     },
     'en': {
         'start_instruction': 'Start processing instruction',
@@ -136,6 +148,14 @@ MESSAGES = {
             "Click the 'copy' button to copy your token to the clipboard and paste it here.\n"
             "Alternatively, you can exit now, and manually edit the configuration file {} to configure your existing LLM token."
         ),
+        'pgpttoken_register_instruction': (
+            "The current environment is missing configuration files. You need to register a PGPT account to get trial tokens.\n"
+            "Please follow these steps:\n"
+            "1. Visit https://user.pgpt.cloud/ to complete account registration\n"
+            "2. After logging in, create an App (please select Deepseek or OpenAI). See documentation: https://docs.pgpt.cloud/\n"
+            "3. Get your API Key, copy it to clipboard, then paste it here\n"
+            "Alternatively, you can exit and manually edit the configuration file {} to set up tokens for other existing LLM models"
+        ),
         'prompt_token_input': "Please paste the token and press Enter (type 'exit' to quit): ",
         'exit_token_prompt': "Exiting token input process.",
         'no_token_detected': "No token detected.",
@@ -163,6 +183,11 @@ MESSAGES = {
         'binding_success': "\nBinding process completed successfully.",
         'binding_failed': "\nBinding process failed or was not completed.",
         'binding_request_failed': "\nFailed to initiate binding request.",
+        'The operation completed successfully': "The operation completed successfully",
+        'Execution was interrupted by the user': "Execution was interrupted by the user",
+        'Initial mission': "Initial mission",
+        'Code execution result feedback': "Code execution result feedback",
+
     }
 }
 

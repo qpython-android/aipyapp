@@ -241,7 +241,8 @@ class AIAppGUI:
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_rowconfigure(1, weight=1)
 
-        self.print_output(f"Python use - AIPython ({__version__}) [https://www.aipy.app]\n")
+        console.print(f"[bold cyan]🚀 [AIPyApp ({__version__}) on [[green]QPython[/green]][/bold cyan] ")
+        console.print(f"[bold cyan]🌐 http://github.com/qpython-android/aipyapp[/bold cyan]")
         self.print_output(f"{T('default')}: {self.names['default']}，{T('enabled')}: {' '.join(self.names['enabled'])}\n")
 
     def open_work_dir(self):
@@ -392,7 +393,7 @@ def main(args):
     settings.lang="zh"
     console = GUIConsole()
 
-    lang = settings.get('lang')
+    lang = settings.get('lang') or or (os.getenv('LANG')[:2] if os.getenv('LANG') else "en")
     if lang: set_lang(lang)
 
     try:

@@ -40,7 +40,7 @@ class Task:
         self.max_rounds = max_rounds
         self.system_prompt = system_prompt
         self.pattern = re.compile(
-            r"^(`{4})(\w+)\s+([\w\-\.]+)\n(.*?)^\1\s*$",
+            r"^(`{3,4})(\w+)\s+([\w\-\.]+)\n(.*?)^\1\s*$",
             re.DOTALL | re.MULTILINE
         )
 
@@ -103,6 +103,9 @@ class Task:
         self.instruction = None
 
     def parse_reply(self, markdown):
+        """
+        从LLM回复中匹配出需要执行的代码
+        """
         code_blocks = {}
         for match in self.pattern.finditer(markdown):
             _, _, name, content = match.groups()
@@ -111,16 +114,20 @@ class Task:
         return code_blocks
 
     def process_code_reply(self, blocks, llm=None):
+        """
+        执行从LLM回复中匹配出的代码
+        """
+
         event_bus('exec', blocks)
         code_block = blocks['main']
-        self.box(f"\n⚡ {T('start_execute')}:", code_block, lang='python')
+        self.box(f"[white] 🚀 {T('start_execute')} ", code_block, lang='python')
         result = self.runner(code_block, blocks)
         event_bus('result', result)
         result = json.dumps(result, ensure_ascii=False, indent=4)
-        self.box(f"\n✅ {T('execute_result')}:\n", result, lang="json")
+        self.box(f"[green] ✅ {T('execute_result')} ", result, lang="json")
         status = self.console.status(f"[dim white]{T('start_feedback')}...")
         self.console.print(status)
-        feed_back = f"# 最初任务\n{self.instruction}\n\n# 代码执行结果反馈\n{result}"
+        feed_back = f"# {T('Initial mission')}\n{self.instruction}\n\n# {T('Code execution result feedback')}\n{result}"
         feedback_response = self.llm(feed_back, name=llm)
         return feedback_response
 
@@ -178,7 +185,7 @@ class Task:
         prompt['python_version'] = platform.python_version()
         prompt['platform'] = platform.platform()
         prompt['today'] = date.today().isoformat()
-        prompt['work_dir'] = '工作目录为当前目录，默认在当前目录下创建文件'
+        prompt['work_dir'] = '工作目录为qpy.tmp，默认在qpy.tmp下创建文件'
         if self.console.quiet:
             prompt['matplotlib'] = "我现在用的是 matplotlib 的 Agg 后端，请默认用 plt.savefig() 保存图片后用 runtime.display() 显示，禁止使用 plt.show()"
             prompt['wxPython'] = "你回复的Markdown 消息中，可以用 ![图片](图片路径) 的格式引用之前创建的图片，会显示在 wx.html2 的 WebView 中"
@@ -191,7 +198,7 @@ class Task:
         """
         执行自动处理循环，直到 LLM 不再返回代码消息
         """
-        self.box(f"[yellow]{T('start_instruction')}", f'[red]{instruction or self.instruction}', align="center")
+        self.box(f"[yellow] 💁 {T('start_instruction')} ", f'[red]{instruction or self.instruction}', align="center")
         if not instruction:
             prompt = self.build_user_prompt()
             event_bus('task_start', prompt)

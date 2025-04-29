@@ -9,7 +9,12 @@ from .task import Task
 from .llm import LLM
 from .runner import Runner
 from .plugin import PluginManager
-from .prompt import SYSTEM_PROMPT
+
+lang = os.getenv('LANG')[:2] if os.getenv('LANG') else "en"
+if lang == "zh":
+    from .prompt import SYSTEM_PROMPT
+else:
+    from .prompt_en import SYSTEM_PROMPT
 
 class TaskManager:
     def __init__(self, settings, console):
