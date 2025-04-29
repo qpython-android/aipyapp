@@ -1,3 +1,6 @@
+# About this project
+This project is forked from [https://github.com/knownsec/aipyapp/](https://github.com/knownsec/aipyapp/). We fully adhere to their licensing agreement and extend our heartfelt gratitude for their generous spirit of sharing.
+
 # Python use
 Python use (aipython) is a Python command-line interpreter integrated with LLM.
 
