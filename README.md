@@ -1,5 +1,7 @@
-# About this project
+# About AIPyApp on QPython
 This project is forked from [https://github.com/knownsec/aipyapp/](https://github.com/knownsec/aipyapp/). We fully adhere to their licensing agreement and extend our heartfelt gratitude for their generous spirit of sharing.
+
+We have made a lot of adjustments to the QPython runtime environment. If you need the PC version of AIPyApp, please use the original version.
 
 # Python use
 Python use (aipython) is a Python command-line interpreter integrated with LLM.
